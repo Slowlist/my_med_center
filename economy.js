@@ -1,0 +1,544 @@
+// Economy owns persistence, monthly grading, wages, and random financial swings.
+function serializeGame(){
+  return{
+    version:1,
+    savedAt:Date.now(),
+      customCenterName,
+      hospitalStage,
+      money,day,score,totalTreated,researchPoints,monthlyInc,incAccum,reputation,cleanliness,stress,adReach,
+      floorGrids,floorSpecializations,floorPanelHidden,floorPanelPosition,currentFloor,grid,rooms,patients,staff,staffPool,logs,
+    selTool,gameTime,speed,paused,patId,staffId,zoom,buildMode,
+    currentTab,debtDays,debtFreeDays,winStabilityDays,lowRepDays,dirtyDays,highStressDays,gameOver,loseReason,runOutcome,
+    tutorialActive,tutorialStep,tutorialCompleted,
+    softGuideDismissed,
+    unlockedTools:[...unlockedTools],
+    unlockedRoles:[...unlockedRoles],
+    unlockedMilestones:[...unlockedMilestones],
+    researchedTech:[...researchedTech],
+    unlockedFeatures:[...unlockedFeatures],
+    activeResearch,
+    dispatchJobs,dispatchJobId,
+    hasStarted,gradeIndex,gradeNote,
+    monthRepAccum,monthCleanAccum,monthWaitAccum,monthSamples,monthDebtDays,monthHighWaitDays,
+    budgetMonthIncome,budgetMonthExpenses,budgetMonthStartDay,
+    departments,
+    techTree,
+    govRequired,govTreated,totalPatients,totalPublicCareTreated,
+    recentAuditFailureDays,
+    grantOffers,
+    contractOffer,activeContract,lastContractId,insuranceContracts,freeBuildCredits,
+    dailyGoal,dailyStats,staffShiftFilter,eventStats,eventMemory
+  };
+}
+function makeSaveFilename(){
+  const safeName=(customCenterName||'my-medical-center')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g,'-')
+    .replace(/^-+|-+$/g,'')||'my-medical-center';
+  return `${safeName}-day-${day}.mmcsave`;
+}
+function exportSaveFile(){
+  if(typeof Blob==='undefined'||typeof URL==='undefined'||typeof document==='undefined')return false;
+  try{
+    const blob=new Blob([JSON.stringify(serializeGame(),null,2)],{type:'application/json'});
+    const url=URL.createObjectURL(blob);
+    const link=document.createElement('a');
+    link.href=url;
+    link.download=makeSaveFilename();
+    link.style.display='none';
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    setTimeout(()=>URL.revokeObjectURL(url),1000);
+    return true;
+  }catch(err){
+    console.error(err);
+    return false;
+  }
+}
+function saveGame(){
+  try{
+    localStorage.setItem(SAVE_KEY,JSON.stringify(serializeGame()));
+    const exported=exportSaveFile();
+    document.getElementById('hint').textContent=exported
+      ?`Game saved and exported as ${makeSaveFilename()}.`
+      :`Game saved to local storage on day ${day}.`;
+    addLog(exported?'Game saved and exported to a save file.':'Game saved to local storage.','g');
+  }catch(err){
+    console.error(err);
+    document.getElementById('hint').textContent='Save failed. Local storage may be unavailable.';
+    addLog('Save failed. Local storage may be unavailable.','b');
+  }
+}
+function loadGame(){
+  try{
+    const raw=localStorage.getItem(SAVE_KEY);
+    if(!raw){
+      document.getElementById('hint').textContent='No saved hospital was found in local storage.';
+      if(logs.length)addLog('No saved hospital was found in local storage.','w');
+      return;
+    }
+    const data=JSON.parse(raw);
+    customCenterName=sanitizeCustomCenterName(data.customCenterName);
+    hospitalStage=data.hospitalStage??'clinic';
+    money=data.money??STARTING_CASH;
+    day=data.day??1;
+    score=data.score??0;
+    totalTreated=data.totalTreated??0;
+    researchPoints=data.researchPoints??0;
+      monthlyInc=data.monthlyInc??0;
+      incAccum=data.incAccum??0;
+      reputation=data.reputation??70;
+      cleanliness=data.cleanliness??78;
+      stress=data.stress??0;
+      adReach=data.adReach??0;
+      floorGrids=Array.isArray(data.floorGrids)&&data.floorGrids.length
+        ?data.floorGrids
+        :Array.from({length:MAX_FLOORS},(_,idx)=>idx===0&&Array.isArray(data.grid)?data.grid:makeEmptyGrid());
+      floorSpecializations=data.floorSpecializations&&typeof data.floorSpecializations==='object'
+        ?{...makeFloorSpecializations(),...data.floorSpecializations}
+        :makeFloorSpecializations();
+      floorPanelHidden=data.floorPanelHidden??true;
+      floorPanelPosition=data.floorPanelPosition??null;
+      currentFloor=data.currentFloor??1;
+      grid=getFloorGrid(currentFloor);
+    rooms=Array.isArray(data.rooms)?data.rooms.map(room=>({...room,floor:room.floor??1})):[]; 
+    patients=Array.isArray(data.patients)?data.patients:[];
+    staff=Array.isArray(data.staff)?data.staff.map(normalizeStaffMember):[];
+    staffPool=Array.isArray(data.staffPool)?data.staffPool.map(normalizeStaffMember):[];
+    logs=Array.isArray(data.logs)?data.logs.slice(0,60):[];
+    selTool=data.selTool??null;
+    gameTime=data.gameTime??0;
+    speed=data.speed??1;
+    zoom=data.zoom??1;
+    buildMode=data.buildMode??true;
+    paused=data.paused??true;
+    patId=data.patId??(patients.reduce((max,p)=>Math.max(max,p.id||0),0)+1);
+    staffId=data.staffId??Math.max(
+      staff.reduce((max,s)=>Math.max(max,s.id||0),0),
+      staffPool.reduce((max,s)=>Math.max(max,s.id||0),0)
+    )+1;
+    currentTab=data.currentTab??'clerical';
+    debtDays=data.debtDays??0;
+    debtFreeDays=data.debtFreeDays??0;
+    winStabilityDays=data.winStabilityDays??0;
+    lowRepDays=data.lowRepDays??0;
+    dirtyDays=data.dirtyDays??0;
+    highStressDays=data.highStressDays??0;
+    gameOver=!!data.gameOver;
+    loseReason=data.loseReason??'';
+    runOutcome=data.runOutcome??'';
+    tutorialActive=!!data.tutorialActive;
+    tutorialStep=data.tutorialStep??0;
+    tutorialCompleted=!!data.tutorialCompleted;
+    softGuideDismissed=!!data.softGuideDismissed;
+    unlockedTools=new Set(data.unlockedTools||STARTING_TOOLS);
+    unlockedRoles=new Set(data.unlockedRoles||STARTING_ROLES);
+    unlockedMilestones=new Set(data.unlockedMilestones||[]);
+    researchedTech=new Set(data.researchedTech||[]);
+    unlockedFeatures=new Set(data.unlockedFeatures||[]);
+    activeResearch=data.activeResearch??null;
+    dispatchJobs=Array.isArray(data.dispatchJobs)?data.dispatchJobs:[];
+    dispatchJobId=data.dispatchJobId??(dispatchJobs.reduce((max,job)=>Math.max(max,job.id||0),0)+1);
+    hasStarted=data.hasStarted??true;
+    gradeIndex=data.gradeIndex??0;
+    gradeNote=data.gradeNote??'Monthly inspectors are fully satisfied';
+    monthRepAccum=data.monthRepAccum??0;
+    monthCleanAccum=data.monthCleanAccum??0;
+    monthWaitAccum=data.monthWaitAccum??0;
+    monthSamples=data.monthSamples??0;
+    monthDebtDays=data.monthDebtDays??0;
+    monthHighWaitDays=data.monthHighWaitDays??0;
+    budgetMonthIncome=data.budgetMonthIncome??0;
+    budgetMonthExpenses=data.budgetMonthExpenses??0;
+    budgetMonthStartDay=data.budgetMonthStartDay??day;
+    departments=data.departments&&typeof data.departments==='object'
+      ?{...makeDepartments(),...Object.fromEntries(Object.entries(data.departments).map(([key,value])=>[key,{...(makeDepartments()[key]||{level:1}),...(value||{})}]))}
+      :(data.departmentLevels&&typeof data.departmentLevels==='object'
+        ?Object.fromEntries(Object.entries({...makeDepartments()}).map(([key,value])=>[key,{level:data.departmentLevels[key]??value.level}]))
+        :makeDepartments());
+    techTree=data.techTree&&typeof data.techTree==='object'
+      ?{...makeTechTree(),...Object.fromEntries(Object.entries(data.techTree).map(([key,value])=>[key,{...(makeTechTree()[key]||{unlocked:false}),...(value||{})}]))}
+      :makeTechTree();
+    govRequired=data.govRequired??govRequired??0.35;
+    govTreated=data.govTreated??data.monthPublicCareTreated??0;
+    totalPatients=data.totalPatients??data.monthPatientsTreated??0;
+    totalPublicCareTreated=data.totalPublicCareTreated??0;
+    recentAuditFailureDays=data.recentAuditFailureDays??0;
+    grantOffers=Array.isArray(data.grantOffers)?data.grantOffers:[];
+    contractOffer=data.contractOffer??null;
+    activeContract=data.activeContract??null;
+    lastContractId=data.lastContractId??null;
+    insuranceContracts=Array.isArray(data.insuranceContracts)
+      ?data.insuranceContracts
+      :(data.activeInsuranceContract?[{...data.activeInsuranceContract,daysLeft:data.insuranceDaysLeft??data.activeInsuranceContract.durationDays??10}]:[]);
+    freeBuildCredits=data.freeBuildCredits||{gp:0};
+    dailyGoal=data.dailyGoal??null;
+    dailyStats=data.dailyStats||{treated:0,gpVisits:0,roomsBuilt:0,rolesHired:{},cleanDays:0};
+    staffShiftFilter=data.staffShiftFilter??'day';
+    eventStats={
+      totalEvents:data.eventStats?.totalEvents??0,
+      emergencies:data.eventStats?.emergencies??0,
+      staffIncidents:data.eventStats?.staffIncidents??0,
+      complaints:data.eventStats?.complaints??0
+    };
+    eventMemory=data.eventMemory&&typeof data.eventMemory==='object'?data.eventMemory:{};
+    if(typeof initializeEventMetadata==='function')initializeEventMetadata();
+    if(typeof applySavedTutorialPreference==='function')applySavedTutorialPreference();
+    hover={x:-1,y:-1};
+    dragging=false;
+    syncActiveGrid();
+    loseReason=gameOver?loseReason:'';
+    document.getElementById('log').innerHTML=logs.slice(0,20).map(l=>`<div class="li ${l.type}">Day ${l.d}: ${l.msg}</div>`).join('');
+    document.getElementById('staffmodal').classList.remove('open');
+    document.getElementById('tt').style.display='none';
+    applyCustomCenterName();
+    setMenuVisibility(false);
+    document.getElementById('gameover').classList.toggle('open',gameOver);
+    updateMenuBlurState();
+    if(gameOver){
+      renderEndScreen(runOutcome==='win'?'Run Complete':'Hospital Closed',loseReason,runOutcome||'loss');
+    }
+    document.getElementById('hint').textContent=`Loaded hospital from day ${day}.`;
+    updateSpeedButton();
+    updatePauseButton();
+    updateBuildModeButton();
+    updateFloorControls();
+    applyZoom();
+    updateUI();
+    render();
+    addLog('Saved hospital loaded from local storage.','g');
+  }catch(err){
+    console.error(err);
+    document.getElementById('hint').textContent='Load failed. The save data may be corrupted.';
+    if(logs.length)addLog('Load failed. The save data may be corrupted.','b');
+  }
+}
+
+function getReputationStatus(){
+  if(reputation>=80)return 'Excellent public trust';
+  if(reputation>=60)return 'Stable standing';
+  if(reputation>=40)return 'Concerns rising';
+  if(reputation>=20)return 'Patients are losing confidence';
+  return 'Closure risk is severe';
+}
+
+function getCleanlinessStatus(){
+  if(cleanliness>=85)return 'Facility is running clean';
+  if(cleanliness>=65)return 'Acceptable, but keep janitors staffed';
+  if(cleanliness>=40)return 'Dirty floors and full bins are hurting trust';
+  return 'Unsafe conditions are damaging the hospital';
+}
+
+function getHospitalGrade(){return HOSPITAL_GRADES[gradeIndex];}
+
+function reviewHospitalGrade(){
+  const avgRep=monthSamples?monthRepAccum/monthSamples:reputation;
+  const avgClean=monthSamples?monthCleanAccum/monthSamples:cleanliness;
+  const avgWait=monthSamples?monthWaitAccum/monthSamples:0;
+  const problems=[];
+
+  if(avgRep<55)problems.push('low public confidence');
+  if(avgClean<62)problems.push('poor sanitation standards');
+  if(monthDebtDays>=5)problems.push('too many days in debt');
+  if(monthHighWaitDays>=8||avgWait>8)problems.push('long patient waits');
+
+  if(problems.length){
+    if(gradeIndex<HOSPITAL_GRADES.length-1)gradeIndex++;
+    gradeNote=`Unsatisfactory month: ${problems.join(', ')}.`;
+    addLog(`Monthly inspection: grade fell to ${getHospitalGrade()} due to ${problems.join(', ')}.`,'b');
+  }else{
+    gradeNote='Monthly inspectors are satisfied with current standards.';
+    addLog(`Monthly inspection: grade held at ${getHospitalGrade()}.`,'g');
+  }
+
+  monthRepAccum=0;
+  monthCleanAccum=0;
+  monthWaitAccum=0;
+  monthSamples=0;
+  monthDebtDays=0;
+  monthHighWaitDays=0;
+}
+
+function wageBill(){return staff.filter(s=>s.hired).reduce((a,s)=>a+s.salary,0);}
+
+function flushIncome(){
+  if(incAccum>0){
+    monthlyInc=Math.floor(incAccum);
+    changeMoney(monthlyInc);
+    addLog(`Income: +$${monthlyInc}`,'g');
+    incAccum=0;
+    updateUI();
+  }
+}
+
+const EVENTS=[
+  {m:'Patient surge reported across the intake desk.',kind:'chaos',category:'crisis',rarity:'common',icon:'📈',title:'Patient Surge',desc:'A sudden wave of new patients has arrived at the hospital.',impact:'<div>Spawns extra patients immediately.</div><div>Stress rises as intake is pushed harder.</div>',f:()=>{triggerPatientSurge();},followUp:{chance:0.42,title:'Staff Burnout',f:()=>{triggerStaffBurnout();},followUp:{chance:0.35,title:'Patient Complaint',f:()=>{triggerPatientComplaint();}}}},
+  {m:'A staff member is out unexpectedly today.',kind:'negative',category:'pressure',rarity:'common',icon:'🤒',title:'Staff Sick Day',desc:'A team member called out sick and left a gap in coverage.',impact:'<div>A hired staff member is removed from coverage for the day.</div><div>Room and shift performance may suffer until they return.</div>',f:()=>{triggerStaffSick();}},
+  {m:'A critical machine has gone down.',kind:'negative',category:'crisis',rarity:'uncommon',icon:'🛠️',title:'Equipment Failure',desc:'A clinical room has lost key equipment and is temporarily offline.',impact:'<div>One operational clinical room is disabled for a short time.</div><div>Stress rises while the room is unavailable.</div>',f:()=>{triggerEquipmentFailure();}},
+  {m:'A patient has filed a complaint.',kind:'negative',category:'pressure',rarity:'common',icon:'🗣️',title:'Patient Complaint',desc:'A dissatisfied patient has raised concerns with administration.',impact:'<div>Reputation drops.</div><div>Staff pressure and stress increase.</div>',f:()=>{triggerPatientComplaint();}},
+  {m:'Emergency services are routing a critical case your way.',kind:'chaos',category:'crisis',rarity:'uncommon',icon:'🚨',title:'Emergency Case',desc:'A critical patient is inbound and needs urgent treatment.',impact:'<div>An urgent patient enters the queue immediately.</div><div>Stress rises from the sudden emergency load.</div>',f:()=>{triggerEmergency();}},
+  {m:'Government grant: +$3,000!',kind:'positive',category:'opportunity',rarity:'common',icon:'💵',title:'Government Grant',desc:'A city grant has been approved for hospital operations.',impact:'<div>Cash increases by $3,000.</div>',f:()=>{changeMoney(3000);updateUI();}},
+  {m:'Emergency Staff Relief: temporary support arrived to reduce workload.',kind:'positive',category:'positive',rarity:'uncommon',icon:'🚑',title:'Emergency Staff Relief',desc:'Temporary staff support has arrived.',impact:'<div>Stress reduction.</div>',choices:[
+    {label:'Accept Help',type:'primary',action:()=>{
+      reduceStress(10);
+      addLog('Temporary staff relief was accepted. Stress eased across the hospital.','g');
+      showToast('Staff relief accepted','good');
+      updateUI();
+    }}
+  ]},
+  {m:'Staff appreciated! Morale up.',kind:'positive',category:'positive',rarity:'common',icon:'👏',title:'Staff Appreciation',desc:'Recognition from leadership has lifted staff spirits.',impact:'<div>Morale support event with no direct penalty.</div>',f:()=>{}},
+  {m:'Inspection passed - score bonus!',kind:'positive',category:'opportunity',rarity:'uncommon',icon:'✅',title:'Inspection Passed',desc:'Inspectors were satisfied with hospital performance.',impact:'<div>Score increases.</div>',f:()=>{score+=20;}},
+  {m:'Cleaning audit praise: reputation +4.',kind:'positive',category:'positive',rarity:'uncommon',icon:'🧼',title:'Cleaning Audit Praise',desc:'The hospital was recognized for strong sanitation standards.',impact:'<div>Reputation and cleanliness both improve.</div>',f:()=>{reputation=clamp(reputation+4,0,100);cleanliness=clamp(cleanliness+6,0,100);updateUI();}},
+  {m:'Messy waiting room complaints hit the lobby.',kind:'negative',category:'pressure',rarity:'common',title:'Lobby Complaints',desc:'The waiting area is causing visible frustration among patients and visitors.',impact:'<div>Reputation drops and cleanliness slips.</div><div>Lobby pressure rises until conditions improve.</div>',f:()=>{
+    const repLoss=getChaosRepLoss(5,currentShift());
+    const cleanLoss=Math.max(3,Math.round(8*(1-getGuardProtection(currentShift()))));
+    reputation=clamp(reputation-repLoss,0,100);
+    cleanliness=clamp(cleanliness-cleanLoss,0,100);
+    updateUI();
+  }},
+  {m:'A VIP patient has chosen your hospital for discreet care.',kind:'positive',category:'opportunity',rarity:'rare',icon:'🌟',title:'VIP Patient',desc:'A high-profile patient is arriving and expects quick, polished treatment.',impact:'<div>A premium VIP case is added to the queue.</div><div>Stress rises slightly, but the case pays above normal when treated.</div>',f:()=>{triggerVipPatient();}},
+  {m:'A major accident is sending multiple emergency patients your way.',kind:'chaos',category:'crisis',rarity:'rare',minStage:'expanding',icon:'🚨',title:'Mass Casualty Incident',desc:'Multiple patients are arriving at once from a major accident.',impact:'<div>High stress, but strong community trust if your hospital responds well.</div>',available:()=>hasOperationalER()||hospitalStage==='medical',choices:[
+    {label:'Accept All Patients',type:'primary',action:()=>{
+      spawnEmergencyPatients(6);
+      eventStats.emergencies+=6;
+      stress=clamp(stress+15,0,100);
+      reputation=clamp(reputation+10,0,100);
+      const erRoom=rooms.find(r=>r.type==='er'&&isConn(r)&&roomHasRequiredStaff(r))||rooms.find(r=>r.type==='waiting_room'&&isConn(r));
+      if(erRoom)focusEventRoom(erRoom,true,4200);
+      addLog('Mass casualty response activated. All incoming emergency patients were accepted.','g');
+      showToast('Mass casualty accepted','warn');
+      updateUI();
+    }},
+    {label:'Divert Some Patients',type:'warn',action:()=>{
+      spawnEmergencyPatients(3);
+      eventStats.emergencies+=3;
+      stress=clamp(stress+6,0,100);
+      reputation=clamp(reputation+4,0,100);
+      const erRoom=rooms.find(r=>r.type==='er'&&isConn(r)&&roomHasRequiredStaff(r))||rooms.find(r=>r.type==='waiting_room'&&isConn(r));
+      if(erRoom)focusEventRoom(erRoom,true,3200);
+      addLog('Mass casualty response limited. Some patients were diverted to other hospitals.','w');
+      showToast('Mass casualty diverted','warn');
+      updateUI();
+    }}
+  ]},
+  {m:'A celebrity pregnancy case is requesting special care.',kind:'positive',category:'opportunity',rarity:'legendary',minStage:'medical',icon:'👶',title:'VIP Celebrity Pregnancy',desc:'A high-profile celebrity has chosen your hospital for delivery. Media attention is building fast.',impact:'<div>Huge reputation gain or major backlash depending on how you respond.</div>',choices:[
+    {label:'Prioritize VIP Care',type:'primary',action:()=>{stress=clamp(stress+10,0,100);reputation=clamp(reputation+12,0,100);addLog('VIP treated successfully. Reputation skyrockets.','g');showToast('VIP success','good');updateUI();}},
+    {label:'Treat Normally',type:'warn',action:()=>{reputation=clamp(reputation+3,0,100);stress=clamp(stress+3,0,100);addLog('VIP case handled normally. The public response was steady.','w');showToast('VIP case handled','info');updateUI();}},
+    {label:'Decline Case',type:'danger',action:()=>{reputation=clamp(reputation-6,0,100);addLog('VIP case declined. Media backlash hurt the hospital reputation.','b');showToast('VIP case declined','warn');updateUI();}}
+  ]},
+  {m:'Your active insurance contract is being audited.',kind:'negative',category:'pressure',rarity:'uncommon',icon:'📋',title:'Insurance Audit',desc:'Your current insurance contract is under review.',impact:'<div>Reputation risk with a possible short-term financial temptation.</div>',available:()=>insuranceContracts.length>0,choices:[
+    {label:'Cooperate Fully',type:'primary',action:()=>{reputation=clamp(reputation+3,0,100);recentAuditFailureDays=0;addLog('Insurance audit completed cleanly. Reputation improved.','g');showToast('Audit cleared','good');updateUI();}},
+    {label:'Cut Corners',type:'danger',action:()=>{reputation=clamp(reputation-5,0,100);recentAuditFailureDays=12;changeMoney(2000);addLog('Corners were cut during the insurance audit. Cash increased, but reputation suffered.','b');showToast('Audit shortcut taken','warn');updateUI();}}
+  ]},
+  {m:'Patient complaints are stacking up across the waiting room.',kind:'negative',category:'pressure',rarity:'uncommon',icon:'😡',title:'Complaint Surge',desc:'Patients are unhappy with wait times.',impact:'<div>Queue frustration is spreading and public trust is at risk.</div>',available:()=>{
+    const waitingCount=waitingPatientsCount();
+    const longWaiters=patients.filter(p=>p.state==='waiting'&&p.waitTime>=getEffectiveLongWaitThreshold()).length;
+    return waitingCount>=5||longWaiters>=2;
+  },choices:[
+    {label:'Offer Compensation',type:'primary',action:()=>{
+      const room=rooms.find(r=>r.type==='waiting_room'&&isConn(r))||null;
+      eventStats.complaints+=1;
+      changeMoney(-2000);
+      reputation=clamp(reputation+2,0,100);
+      if(room)focusEventRoom(room,true,3600);
+      addLog('Leadership offered compensation to calm a surge of patient complaints. Reputation stabilized, but it cost cash.','g');
+      showToast('Complaints compensated','good');
+      updateUI();
+    }},
+    {label:'Ignore',type:'danger',action:()=>{
+      const room=rooms.find(r=>r.type==='waiting_room'&&isConn(r))||null;
+      eventStats.complaints+=1;
+      reputation=clamp(reputation-5,0,100);
+      if(room)focusEventRoom(room,true,3600);
+      addLog('Patient complaints were ignored. Reputation dropped as frustration spread through the waiting room.','b');
+      showToast('Complaint surge ignored','warn');
+      updateUI();
+    }}
+  ]},
+  {m:'Several staff members are nearing exhaustion.',kind:'negative',category:'pressure',rarity:'uncommon',icon:'😓',title:'Staff Burnout Crisis',desc:'Several staff members are nearing exhaustion.',impact:'<div>Energy may crash further and resignations become more likely if leadership does not respond.</div>',available:()=>staff.filter(s=>s.hired&&(s.energy??100)<40).length>=3,choices:[
+    {label:'Give Emergency Bonuses',type:'primary',action:()=>{changeMoney(-3000);boostMoraleAll();addLog('Emergency bonuses were issued to steady the exhausted staff. Morale improved across the hospital.','g');showToast('Bonuses issued','good');updateUI();}},
+    {label:'Push Through',type:'danger',action:()=>{stress=clamp(stress+10,0,100);addLog('Leadership pushed the staff through the exhaustion crisis. Stress rose sharply.','b');showToast('Burnout crisis worsened','warn');updateUI();}}
+  ]},
+  {m:'A sanitation problem has been detected in one of your rooms.',kind:'negative',category:'pressure',rarity:'uncommon',icon:'🧪',title:'Sanitation Issue',desc:'A sanitation problem has been detected in one of your rooms.',impact:'<div>Cleanliness is at risk until leadership decides how to respond.</div>',available:()=>rooms.length>0,choices:[
+    {label:'Fix Immediately',type:'primary',action:()=>{
+      const room=randomOperationalRoom(['waiting_room','gp','er','xray','lab','pharmacy','ward','surgery','head_office'])||rooms.find(r=>isConn(r))||null;
+      changeMoney(-1500);
+      cleanliness=clamp(cleanliness+10,0,100);
+      if(room)focusEventRoom(room,true,3600);
+      addLog('The sanitation issue was fixed immediately. Cleanliness improved.','g');
+      showToast('Sanitation fixed','good');
+      updateUI();
+    }},
+    {label:'Delay Fix',type:'danger',action:()=>{
+      const room=randomOperationalRoom(['waiting_room','gp','er','xray','lab','pharmacy','ward','surgery','head_office'])||rooms.find(r=>isConn(r))||null;
+      cleanliness=clamp(cleanliness-10,0,100);
+      reputation=clamp(reputation-3,0,100);
+      if(room)focusEventRoom(room,true,3600);
+      addLog('The sanitation issue was delayed. Cleanliness fell and reputation suffered.','b');
+      showToast('Sanitation delayed','warn');
+      updateUI();
+    }}
+  ]},
+  {m:'A room is experiencing unstable power.',kind:'negative',category:'pressure',rarity:'uncommon',icon:'⚡',title:'Power Fluctuation',desc:'A room is experiencing unstable power.',impact:'<div>An operational room may be disabled temporarily.</div>',available:()=>rooms.length>0,choices:[
+    {label:'Repair Immediately',type:'primary',action:()=>{
+      const room=randomOperationalRoom(['gp','er','xray','lab','pharmacy','ward','surgery','it_department'])||rooms.find(r=>isConn(r))||null;
+      changeMoney(-1000);
+      if(room){
+        disableRoom(room,2500);
+        focusEventRoom(room,true,3200);
+      }
+      addLog('Emergency electrical repair was ordered immediately.','g');
+      showToast('Power stabilized','good');
+      updateUI();
+    }},
+    {label:'Wait It Out',type:'danger',action:()=>{
+      const room=randomOperationalRoom(['gp','er','xray','lab','pharmacy','ward','surgery','it_department'])||rooms.find(r=>isConn(r))||null;
+      stress=clamp(stress+5,0,100);
+      if(room){
+        disableRoom(room,5000);
+        focusEventRoom(room,true,5000);
+      }
+      addLog('The hospital waited out the power fluctuation. Stress increased while the room struggled.','b');
+      showToast('Power issue worsening','warn');
+      updateUI();
+    }}
+  ]},
+  {m:'Local media is covering your hospital.',kind:'positive',category:'opportunity',rarity:'uncommon',icon:'📺',title:'Media Coverage',desc:'Local media is covering your hospital.',impact:'<div>Reputation boost with a possible patient demand spike.</div>',available:()=>hasMarketingOfficeBuilt()||reputation>=55,choices:[
+    {label:'Promote Hospital',type:'primary',action:()=>{
+      reputation=clamp(reputation+6,0,100);
+      adReach=clamp(adReach+30,0,100);
+      addLog('The hospital leaned into the media coverage. Reputation rose and more patients took notice.','g');
+      showToast('Media buzz rising','info');
+      updateUI();
+    }},
+    {label:'Decline Interview',type:'warn',action:()=>{
+      reputation=clamp(reputation+2,0,100);
+      addLog('The hospital declined a full media push but still gained some goodwill.','w');
+      showToast('Media appearance declined','info');
+      updateUI();
+    }}
+  ]},
+  {m:'Hospital inspectors have arrived without warning.',kind:'negative',category:'pressure',rarity:'rare',icon:'🧾',title:'Hospital Inspection',desc:'Inspectors are reviewing current standards right now.',impact:'<div>Strong standards improve reputation and score.</div><div>Poor conditions cause reputation loss and extra stress.</div>',f:()=>{triggerHospitalInspection();}},
+  {m:'An intern has made a major breakthrough in training.',kind:'positive',category:'positive',rarity:'uncommon',icon:'🎓',title:'Intern Breakthrough',desc:'An intern has made significant progress.',impact:'<div>A promising intern is ready to step into a bigger clinical role.</div>',available:()=>staff.some(s=>s.hired&&s.role==='intern'&&(s.level??1)>=3),choices:[
+    {label:'Promote Intern',type:'primary',action:()=>{
+      const promoted=promoteRandomIntern();
+      if(promoted){
+        addLog(`${promoted.name} was elevated after an intern breakthrough.`,'g');
+      }
+      updateUI();
+    }}
+  ]},
+];
+const EVENT_RARITY_ORDER=['legendary','rare','uncommon','common'];
+const EVENT_RARITY_CHANCES={common:0.6,uncommon:0.25,rare:0.12,legendary:0.03};
+const EVENT_DEFAULT_COOLDOWNS={common:2,uncommon:4,rare:8,legendary:15};
+function getEventId(event){
+  return event.id||String(event.title||event.m||'event')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g,'_')
+    .replace(/^_+|_+$/g,'');
+}
+function getEventCooldownDays(event){
+  return event.cooldownDays??EVENT_DEFAULT_COOLDOWNS[(event.rarity||'common').toLowerCase()]??2;
+}
+function initializeEventMetadata(){
+  EVENTS.forEach(event=>{
+    const id=getEventId(event);
+    event.id=id;
+    event.rarity=(event.rarity||'common').toLowerCase();
+    event.cooldownDays=getEventCooldownDays(event);
+    event.lastTriggeredDay=eventMemory[id]?.lastTriggeredDay??null;
+  });
+}
+function isEventStageUnlocked(event){
+  if(!event.minStage)return true;
+  return STAGE_ORDER.indexOf(hospitalStage)>=STAGE_ORDER.indexOf(event.minStage);
+}
+function isEventOffCooldown(event){
+  const lastTriggeredDay=eventMemory[event.id]?.lastTriggeredDay;
+  if(lastTriggeredDay==null)return true;
+  return day-lastTriggeredDay>=getEventCooldownDays(event);
+}
+function isEventEligible(event){
+  return isEventStageUnlocked(event)
+    && isEventOffCooldown(event)
+    && (!event.available||event.available());
+}
+function rollEventRarity(){
+  const roll=Math.random();
+  if(roll<EVENT_RARITY_CHANCES.legendary)return 'legendary';
+  if(roll<EVENT_RARITY_CHANCES.legendary+EVENT_RARITY_CHANCES.rare)return 'rare';
+  if(roll<EVENT_RARITY_CHANCES.legendary+EVENT_RARITY_CHANCES.rare+EVENT_RARITY_CHANCES.uncommon)return 'uncommon';
+  return 'common';
+}
+function chooseEventByRarity(eventPool,rarity){
+  const startIndex=Math.max(0,EVENT_RARITY_ORDER.indexOf(rarity));
+  for(let i=startIndex;i<EVENT_RARITY_ORDER.length;i++){
+    const bucket=eventPool.filter(event=>(event.rarity||'common')===EVENT_RARITY_ORDER[i]);
+    if(bucket.length)return bucket[Math.floor(Math.random()*bucket.length)];
+  }
+  return null;
+}
+function recordEventTrigger(event){
+  const memory=eventMemory[event.id]||{count:0,lastTriggeredDay:null};
+  memory.lastTriggeredDay=day;
+  memory.count=(memory.count||0)+1;
+  eventMemory[event.id]=memory;
+  event.lastTriggeredDay=day;
+  eventStats.totalEvents=(eventStats.totalEvents||0)+1;
+}
+function resolveEventFollowUp(followUp,depth=0){
+  if(!followUp||depth>2)return;
+  if(Math.random()>=clamp(followUp.chance??0,0,1))return;
+  addLog(`Follow-up event: ${followUp.title}.`,'w');
+  if(typeof followUp.f==='function')followUp.f();
+  if(followUp.followUp)resolveEventFollowUp(followUp.followUp,depth+1);
+}
+function randomEvent(){
+  initializeEventMetadata();
+  const dramaStaff=staff.filter(s=>s.hired&&s.personalityTrait?.id==='difficult');
+  const activeShift=currentShift();
+  const guardProtection=getGuardProtection(activeShift);
+  const guardCount=getGuardCount(activeShift);
+  const eventChance=clamp(0.18+dramaStaff.length*0.06-guardProtection*0.14-guardCount*0.035-getItSupportLevel(activeShift)*0.04,0.04,0.72);
+  if(Math.random()<eventChance){
+    triggerRandomEvent(guardProtection);
+  }
+}
+function triggerRandomEvent(guardProtection=getGuardProtection(currentShift())){
+  initializeEventMetadata();
+  const eligibleEvents=EVENTS.filter(isEventEligible);
+  if(!eligibleEvents.length)return;
+  const preferredPool=guardProtection>=0.45&&Math.random()<0.65
+    ?eligibleEvents.filter(e=>e.kind!=='negative')
+    :eligibleEvents;
+  const eventPool=preferredPool.length?preferredPool:eligibleEvents;
+  const e=chooseEventByRarity(eventPool,rollEventRarity())||eventPool[0]||EVENTS[0];
+  if(!e)return;
+  recordEventTrigger(e);
+  addLog(e.m,'');
+  if(e.choices?.length){
+    showEvent({
+      icon:e.icon||'⚠️',
+      category:e.category||'pressure',
+      rarity:e.rarity||'common',
+      title:e.title||'Hospital Event',
+      desc:e.desc||e.m,
+      impactHtml:e.impact||'<div>Operations were affected.</div>',
+      choices:e.choices
+    });
+    return;
+  }
+  e.f();
+  if(e.followUp)resolveEventFollowUp(e.followUp);
+  showEvent({
+    icon:e.icon||'⚠️',
+    category:e.category||'pressure',
+    rarity:e.rarity||'common',
+    title:e.title||'Hospital Event',
+    desc:e.desc||e.m,
+    impactHtml:e.impact||'<div>Operations were affected.</div>',
+    choices:[{label:'Continue',type:'primary',action:()=>{}}]
+  });
+}
