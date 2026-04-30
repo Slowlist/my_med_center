@@ -1,0 +1,1930 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>City Hospital Builder</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --color-background-primary:rgba(255,255,255,0.92);
+  --color-background-secondary:#f8fbff;
+  --color-background-tertiary:#eaf5ff;
+  --color-background-info:#e4f0ff;
+  --color-background-success:#ebf7e6;
+  --color-background-danger:#ffeaea;
+  --color-background-warning:#fff1d9;
+  --color-text-primary:#294056;
+  --color-text-secondary:#67839a;
+  --color-text-info:#296aa4;
+  --color-text-success:#4e8a2c;
+  --color-text-danger:#b25353;
+  --color-text-warning:#a77a28;
+  --color-border-tertiary:rgba(105,140,174,0.18);
+  --color-border-secondary:rgba(78,117,154,0.28);
+  --color-border-primary:rgba(58,95,129,0.4);
+  --color-border-info:rgba(41,106,164,0.35);
+  --color-border-success:rgba(78,138,44,0.32);
+  --color-border-danger:rgba(178,83,83,0.3);
+  --color-border-warning:rgba(167,122,40,0.3);
+  --border-radius-md:14px;
+  --border-radius-lg:22px;
+  --font-sans:'Trebuchet MS','Segoe UI',sans-serif;
+  --shadow-soft:0 14px 32px rgba(93,132,164,0.16);
+  --shadow-card:0 8px 18px rgba(92,129,162,0.14);
+}
+body{
+  background:
+    radial-gradient(circle at 12% 12%,rgba(255,248,209,0.95),rgba(255,248,209,0) 20%),
+    radial-gradient(circle at 84% 82%,rgba(255,255,255,0.55),rgba(255,255,255,0) 18%),
+    linear-gradient(180deg,#d7eefc 0%,#c8e8fa 34%,#b9ddf2 100%);
+  display:flex;align-items:center;justify-content:flex-start;min-height:100vh;
+  font-family:var(--font-sans);padding:26px 18px 34px;color:var(--color-text-primary);overflow:auto;
+}
+body::before,body::after{
+  content:'';position:fixed;border-radius:50%;pointer-events:none;filter:blur(4px);opacity:.55
+}
+body::before{width:280px;height:280px;left:4vw;top:12vh;background:rgba(255,255,255,0.28)}
+body::after{width:210px;height:210px;right:6vw;bottom:10vh;background:rgba(182,229,255,0.24)}
+#game{
+  display:grid;grid-template-columns:180px 880px 270px;grid-template-rows:118px 528px 40px;
+  height:686px;width:1330px;position:relative;
+  background:rgba(234,245,255,0.32);border:1px solid rgba(255,255,255,0.5);
+  border-radius:30px;overflow:hidden;font-family:var(--font-sans);box-shadow:0 26px 60px rgba(83,129,166,0.22);flex-shrink:0
+}
+#topbar{
+  grid-column:1/4;display:flex;align-items:flex-start;gap:16px;padding:14px 18px 12px;
+  background:linear-gradient(180deg,rgba(255,255,255,0.95),rgba(245,251,255,0.9));
+  border-bottom:1px solid rgba(130,165,196,0.16);backdrop-filter:blur(10px)
+}
+#brand{
+  min-width:250px;padding:8px 16px;border-radius:24px;background:linear-gradient(180deg,rgba(255,255,255,0.98),rgba(233,244,255,0.94));
+  border:1px solid rgba(117,156,191,0.2);box-shadow:var(--shadow-card)
+}
+#brand .eyebrow{font-size:10px;letter-spacing:.22em;text-transform:uppercase;color:#7c9cb5;font-weight:700}
+#brand h1{font-size:28px;line-height:1;color:#2f4358;font-weight:700;letter-spacing:.02em}
+#brand .subbrand{font-size:12px;color:#7890a5}
+#topstats{display:flex;gap:8px;flex-wrap:wrap;align-items:flex-start;align-content:flex-start;flex:1;min-width:0}
+.stat{
+  display:flex;flex-direction:column;gap:2px;min-width:62px;padding:8px 10px;border-radius:16px;
+  background:rgba(255,255,255,0.75);border:1px solid rgba(128,164,196,0.16);box-shadow:var(--shadow-card);
+  color:var(--color-text-secondary);font-size:10px;text-transform:uppercase;letter-spacing:.08em
+}
+.stat b{font-size:16px;font-weight:700;color:var(--color-text-primary);letter-spacing:0;text-transform:none}
+#spd{margin-left:auto;display:flex;gap:6px;align-items:center}
+.sb,.mb,#staffbtn,.dockbtn,.action-card,.title-btn,.staff-actions button,.modal-close,.hire-btn,.fire-btn,.cc button{
+  transition:transform .14s ease,box-shadow .14s ease,filter .14s ease,background .14s ease,border-color .14s ease
+}
+.sb,.mb,#staffbtn{
+  font-size:12px;padding:9px 12px;border:1px solid rgba(114,152,188,0.22);border-radius:16px;cursor:pointer;
+  background:linear-gradient(180deg,#ffffff,#edf6ff);color:#36526a;box-shadow:var(--shadow-card)
+}
+.sb.on{background:linear-gradient(180deg,#dcecff,#bfdcff);color:#1f5f99;border-color:rgba(41,106,164,0.32)}
+.sb:hover,.mb:hover,#staffbtn:hover,.dockbtn:hover,.action-card:hover,.title-btn:hover,.staff-actions button:hover,.modal-close:hover,.hire-btn:hover,.fire-btn:hover,.cc button:hover{
+  transform:translateY(-1px);box-shadow:0 10px 18px rgba(91,126,158,0.16)
+}
+#sidebar,#rp{
+  background:linear-gradient(180deg,rgba(255,255,255,0.85),rgba(244,250,255,0.82));
+  backdrop-filter:blur(10px);padding:10px 10px 14px;overflow-y:auto
+}
+#sidebar{border-right:1px solid rgba(133,167,196,0.15)}
+#rp{border-left:1px solid rgba(133,167,196,0.15);display:flex;flex-direction:column;gap:7px;font-size:11px}
+#sidebar h2,#rp h2{font-size:10px;font-weight:700;color:#7b95aa;text-transform:uppercase;letter-spacing:.16em;margin:8px 6px 6px}
+.rb{
+  display:flex;flex-direction:column;width:100%;margin-bottom:6px;padding:9px 11px;border:1px solid rgba(127,163,194,0.16);
+  border-radius:18px;background:linear-gradient(180deg,rgba(255,255,255,0.95),rgba(237,246,255,0.86));cursor:pointer;text-align:left;box-shadow:var(--shadow-card)
+}
+.rb:hover{filter:brightness(1.02);border-color:rgba(93,135,172,0.26)}
+.rb:disabled{opacity:.58;cursor:not-allowed}
+.rb:disabled:hover{filter:none}
+.rb.sel{border-color:rgba(41,106,164,0.35);background:linear-gradient(180deg,#e9f4ff,#d9ebff)}
+.rb.locked{border-style:dashed}
+.rb .rn{font-size:12px;font-weight:700;color:var(--color-text-primary)}
+.rb .rp{font-size:11px;color:var(--color-text-success);margin-top:2px}
+.rb .rd{font-size:10px;color:var(--color-text-secondary);margin-top:2px}
+.rb.locked .rd{color:var(--color-text-warning)}
+.sep{margin:8px 2px 4px;border-top:1px solid rgba(124,160,188,0.16)}
+#cw{
+  position:relative;overflow:hidden;cursor:crosshair;
+  background:linear-gradient(180deg,#bfe7fa 0%,#cceaf8 36%,#a9d4ee 100%)
+}
+canvas{display:block}
+#rp h2:first-child,#sidebar h2:first-child{margin-top:2px}
+.ic,.mc,.cc,.dg{
+  background:linear-gradient(180deg,rgba(255,255,255,0.92),rgba(241,248,255,0.9));
+  border-radius:18px;padding:9px 10px;border:1px solid rgba(124,160,188,0.14);box-shadow:var(--shadow-card)
+}
+.ic .lbl{font-size:10px;color:var(--color-text-secondary);text-transform:uppercase;letter-spacing:.08em}
+.ic .val{font-size:18px;font-weight:700;color:var(--color-text-primary)}
+.ic .sub,.mc .md,.mc .mp,.cc .cd,.cc .cp,.cc .cr,.dg .gd,.dg .gp,.dg .gr{font-size:10px;line-height:1.4;color:var(--color-text-secondary)}
+.mc.done{background:linear-gradient(180deg,#f0faea,#e4f5da);border-color:rgba(78,138,44,0.24)}
+.mc .mt,.cc .ct,.dg .gt{font-size:12px;font-weight:700;color:var(--color-text-primary)}
+.mc .mp{color:var(--color-text-warning);margin-top:4px}
+.mc.done .mp,.cc .cr,.dg .gr{color:var(--color-text-success)}
+#milestones,#contracts,#dailygoal{display:flex;flex-direction:column;gap:6px}
+#researchpanel,#dispatchjobs{display:flex;flex-direction:column;gap:6px}
+#log{flex:2;overflow-y:auto;min-height:190px;background:linear-gradient(180deg,rgba(255,255,255,0.84),rgba(240,247,255,0.84));border-radius:18px;padding:8px 10px;border:1px solid rgba(124,160,188,0.14);box-shadow:var(--shadow-card)}
+.li{font-size:10px;color:var(--color-text-secondary);padding:3px 0;border-bottom:1px solid rgba(124,160,188,0.1);line-height:1.45}
+.li.g{color:var(--color-text-success)}.li.b{color:var(--color-text-danger)}.li.w{color:var(--color-text-warning)}
+#bot{
+  grid-column:1/4;background:linear-gradient(180deg,rgba(255,255,255,0.92),rgba(243,250,255,0.9));
+  border-top:1px solid rgba(133,167,196,0.18);padding:0 16px;display:flex;align-items:center;
+  gap:8px;font-size:12px;color:var(--color-text-secondary)
+}
+#tt{
+  position:absolute;background:rgba(255,255,255,0.96);border:1px solid rgba(106,145,180,0.22);border-radius:16px;
+  padding:8px 11px;font-size:11px;pointer-events:none;display:none;z-index:10;max-width:180px;color:var(--color-text-primary);
+  line-height:1.5;box-shadow:var(--shadow-card)
+}
+#tt .ts{color:var(--color-text-secondary)}
+#staffmodal{display:none;position:absolute;inset:0;background:rgba(110,145,172,0.32);z-index:20;align-items:center;justify-content:center;backdrop-filter:blur(5px)}
+#staffmodal.open{display:flex}
+#staffbox{
+  background:linear-gradient(180deg,rgba(255,255,255,0.97),rgba(242,248,255,0.95));border:1px solid rgba(119,156,191,0.22);
+  border-radius:24px;width:620px;max-height:560px;overflow-y:auto;padding:18px;box-shadow:0 20px 42px rgba(87,124,157,0.2)
+}
+#staffbox h3{font-size:16px;font-weight:700;color:var(--color-text-primary);margin-bottom:10px}
+.staff-actions{display:flex;justify-content:flex-end;gap:6px;margin-bottom:10px;flex-wrap:wrap}
+.staff-actions button,.modal-close,.hire-btn,.fire-btn,.cc button{
+  font-size:11px;padding:7px 10px;border:1px solid rgba(113,151,185,0.22);border-radius:14px;background:linear-gradient(180deg,#ffffff,#edf5ff);cursor:pointer;color:#36526a
+}
+.staff-actions button:disabled{opacity:.55;cursor:not-allowed}
+.staff-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.scard{
+  border:1px solid rgba(123,160,190,0.14);border-radius:18px;padding:11px;background:linear-gradient(180deg,rgba(255,255,255,0.96),rgba(240,247,255,0.9));
+  cursor:pointer;box-shadow:var(--shadow-card)
+}
+.scard.hired{border-color:rgba(78,138,44,0.22);background:linear-gradient(180deg,#f4fbe9,#eaf6dc)}
+.scard .sname{font-size:13px;font-weight:700;color:var(--color-text-primary)}
+.scard .srole{font-size:10px;color:var(--color-text-secondary);margin-bottom:5px;text-transform:uppercase;letter-spacing:.08em}
+.scard .ssalary{font-size:11px;color:var(--color-text-success);margin-bottom:4px}
+.traits{display:flex;flex-wrap:wrap;gap:4px;margin-top:4px}
+.trait{font-size:10px;padding:3px 7px;border-radius:999px}
+.trait.good{background:var(--color-background-success);color:var(--color-text-success)}
+.trait.bad{background:var(--color-background-danger);color:var(--color-text-danger)}
+.trait.neutral{background:rgba(230,240,250,0.95);color:var(--color-text-secondary)}
+.assign-sel{
+  font-size:11px;margin-top:6px;width:100%;border:1px solid rgba(113,151,185,0.22);border-radius:12px;padding:5px 8px;
+  background:rgba(255,255,255,0.94);color:var(--color-text-primary)
+}
+#gameover{display:none;position:absolute;inset:0;background:rgba(56,79,104,0.46);z-index:30;align-items:center;justify-content:center;backdrop-filter:blur(5px)}
+#gameover.open{display:flex}
+#gameoverbox,#titlebox{
+  width:400px;background:linear-gradient(180deg,rgba(255,255,255,0.97),rgba(240,248,255,0.94));
+  border:1px solid rgba(119,156,191,0.22);border-radius:28px;padding:24px;box-shadow:0 20px 42px rgba(87,124,157,0.2)
+}
+#gameoverbox h3,#titlebox h2{font-size:28px;font-weight:700;color:var(--color-text-primary);margin-bottom:8px}
+#gameoverbox p,#titlebox p{font-size:12px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:14px}
+#gameoverbox .go-stat{font-size:11px;color:var(--color-text-primary);margin-top:4px}
+#titlescreen{
+  position:absolute;inset:0;background:linear-gradient(180deg,rgba(158,206,235,0.28),rgba(86,136,175,0.22));z-index:40;display:flex;align-items:center;justify-content:center;
+  backdrop-filter:blur(4px)
+}
+#titlescreen.hidden{display:none}
+.title-actions{display:flex;flex-direction:column;gap:10px}
+.title-btn{
+  font-size:13px;padding:12px 14px;border:1px solid rgba(113,151,185,0.22);border-radius:16px;background:linear-gradient(180deg,#ffffff,#edf5ff);
+  cursor:pointer;color:var(--color-text-primary);text-align:left;box-shadow:var(--shadow-card)
+}
+.title-btn.primary{background:linear-gradient(180deg,#e8f3ff,#d7e9ff);border-color:rgba(41,106,164,0.26);color:var(--color-text-info)}
+#actionleft,#actionright{
+  position:absolute;top:26px;display:flex;flex-direction:column;gap:12px;z-index:12
+}
+#actionleft{left:16px}
+#actionright{right:16px}
+.action-card{
+  width:124px;padding:12px 12px 11px;border:1px solid rgba(112,151,186,0.18);border-radius:22px;background:linear-gradient(180deg,rgba(255,255,255,0.95),rgba(236,246,255,0.9));
+  cursor:pointer;text-align:center;box-shadow:var(--shadow-soft);color:var(--color-text-primary)
+}
+.ac-icon{
+  display:inline-flex;align-items:center;justify-content:center;width:44px;height:44px;border-radius:16px;margin-bottom:8px;
+  background:linear-gradient(180deg,#dcebff,#bdd8ff);color:#33618f;font-size:12px;font-weight:700;letter-spacing:.12em
+}
+.ac-title{display:block;font-size:14px;font-weight:700}
+.ac-sub{display:block;font-size:10px;color:var(--color-text-secondary);margin-top:2px}
+#builddock{
+  position:absolute;left:50%;bottom:14px;transform:translateX(-50%);display:flex;gap:8px;align-items:center;
+  padding:10px 12px;border-radius:999px;background:linear-gradient(180deg,rgba(58,113,168,0.94),rgba(48,97,149,0.94));
+  box-shadow:0 20px 40px rgba(56,96,141,0.28);z-index:12
+}
+.dockbtn{
+  min-width:68px;padding:9px 10px;border:1px solid rgba(255,255,255,0.18);border-radius:999px;background:rgba(255,255,255,0.12);
+  color:#eef8ff;cursor:pointer;font-size:11px;font-weight:700;letter-spacing:.02em
+}
+.dockbtn small{display:block;font-size:9px;font-weight:400;opacity:.82}
+.dockbtn.sel{background:rgba(255,255,255,0.26);box-shadow:inset 0 0 0 1px rgba(255,255,255,0.16)}
+.dockbtn:disabled{opacity:.42;cursor:not-allowed}
+.research-card{
+  background:linear-gradient(180deg,rgba(255,255,255,0.92),rgba(241,248,255,0.9));
+  border-radius:18px;padding:10px 11px;border:1px solid rgba(124,160,188,0.14);box-shadow:var(--shadow-card)
+}
+.research-card.active{background:linear-gradient(180deg,#ecf5ff,#dbeaff);border-color:rgba(41,106,164,0.22)}
+.research-title{font-size:12px;font-weight:700;color:var(--color-text-primary)}
+.research-meta,.research-desc{font-size:10px;line-height:1.4;color:var(--color-text-secondary)}
+.research-meta{margin-top:3px}
+.research-reward{font-size:10px;color:var(--color-text-success);margin-top:4px}
+.research-card button{
+  margin-top:8px;font-size:11px;padding:7px 10px;border:1px solid rgba(113,151,185,0.22);border-radius:14px;
+  background:linear-gradient(180deg,#ffffff,#edf5ff);cursor:pointer;color:#36526a
+}
+.research-card button:disabled{opacity:.52;cursor:not-allowed}
+.dispatch-card{
+  background:linear-gradient(180deg,rgba(255,255,255,0.92),rgba(241,248,255,0.9));
+  border-radius:18px;padding:10px 11px;border:1px solid rgba(124,160,188,0.14);box-shadow:var(--shadow-card)
+}
+.dispatch-card.active{background:linear-gradient(180deg,#eef7ff,#dcecff);border-color:rgba(75,124,171,0.22)}
+.dispatch-title{font-size:12px;font-weight:700;color:var(--color-text-primary)}
+.dispatch-meta,.dispatch-reward,.dispatch-desc{font-size:10px;line-height:1.4}
+.dispatch-meta,.dispatch-desc{color:var(--color-text-secondary)}
+.dispatch-reward{color:var(--color-text-success);margin-top:4px}
+.panel-pulse{animation:pulsepanel .55s ease}
+@keyframes pulsepanel{
+  0%{transform:scale(1)}
+  50%{transform:scale(1.012)}
+  100%{transform:scale(1)}
+}
+@media (max-width:1360px){
+  body{justify-content:flex-start;overflow:auto}
+  #game{margin:18px auto}
+}
+</style>
+</head>
+<body>
+<div id="game">
+<div id="topbar">
+  <div id="brand">
+    <div class="eyebrow">Project</div>
+    <h1>City Hospital Builder</h1>
+    <div class="subbrand">Watson Heights Medical Campus</div>
+  </div>
+  <div id="topstats">
+    <div class="stat">Cash<b id="smoney">50,000</b></div>
+    <div class="stat">Day<b id="sday">1</b></div>
+    <div class="stat">Shift<b id="sshift">Day</b></div>
+    <div class="stat">Score<b id="sscore">0</b></div>
+    <div class="stat">Grade<b id="sgrade">A+</b></div>
+    <div class="stat">Rep<b id="srep">70</b></div>
+    <div class="stat">Clean<b id="sclean">78</b></div>
+    <div class="stat">Pts<b id="spat">0</b></div>
+    <div class="stat">Waiting<b id="swait">0</b></div>
+    <div class="stat">Staff<b id="sstaff">0</b></div>
+  </div>
+  <div id="spd">
+    <button class="sb on" onclick="setSpd(1)">1x</button>
+    <button class="sb" onclick="setSpd(2)">2x</button>
+    <button class="sb" onclick="setSpd(4)">4x</button>
+    <button class="sb" id="pbtn" onclick="togglePause()">⏸</button>
+    <button class="mb" onclick="saveGame()">Save</button>
+    <button class="mb" onclick="loadGame()">Load</button>
+    <button class="mb" onclick="restartGame()">Restart</button>
+    <button class="mb" onclick="quitToTitle()">Quit</button>
+    <button id="staffbtn" onclick="openStaff()">+ Staff</button>
+  </div>
+</div>
+<div id="sidebar">
+  <h2>Corridors</h2>
+  <button class="rb" data-tool="corridor" data-desc="Click + drag" onclick="sel('corridor')"><span class="rn">Corridor</span><span class="rp">$100/tile</span><span class="rd">Click + drag</span></button>
+  <div class="sep"></div>
+  <h2>Rooms</h2>
+  <button class="rb" data-tool="reception" data-desc="Needs: clerical" onclick="sel('reception')"><span class="rn">Reception</span><span class="rp">$500</span><span class="rd">Needs: clerical</span></button>
+  <button class="rb" data-tool="waiting_room" data-desc="Needs: seating" onclick="sel('waiting_room')"><span class="rn">Waiting Room</span><span class="rp">$900</span><span class="rd">Needs: seating</span></button>
+  <button class="rb" data-tool="dispatch_office" data-desc="Unlock via research" onclick="sel('dispatch_office')"><span class="rn">Dispatch Office</span><span class="rp">$3,200</span><span class="rd">Unlock via research</span></button>
+  <button class="rb" data-tool="gp" data-desc="Needs: GP doctor" onclick="sel('gp')"><span class="rn">GP Office</span><span class="rp">$1,500</span><span class="rd">Needs: GP doctor</span></button>
+  <button class="rb" data-tool="er" data-desc="Needs: ER doctor" onclick="sel('er')"><span class="rn">Emergency Room</span><span class="rp">$3,000</span><span class="rd">Needs: ER doctor</span></button>
+  <button class="rb" data-tool="head_office" data-desc="Needs: dept. attending" onclick="sel('head_office')"><span class="rn">Dept. Head Office</span><span class="rp">$2,200</span><span class="rd">Needs: dept. attending</span></button>
+  <button class="rb" data-tool="xray" data-desc="Needs: dept. attending" onclick="sel('xray')"><span class="rn">X-Ray</span><span class="rp">$2,000</span><span class="rd">Needs: dept. attending</span></button>
+  <button class="rb" data-tool="pharmacy" data-desc="Needs: pharmacist" onclick="sel('pharmacy')"><span class="rn">Pharmacy</span><span class="rp">$1,200</span><span class="rd">Needs: pharmacist</span></button>
+  <button class="rb" data-tool="surgery" data-desc="Needs: surgeon + ER attending" onclick="sel('surgery')"><span class="rn">Surgery</span><span class="rp">$6,000</span><span class="rd">Needs: surgeon + ER attending</span></button>
+  <button class="rb" data-tool="ward" data-desc="Needs: nurse + CNA" onclick="sel('ward')"><span class="rn">Ward</span><span class="rp">$2,500</span><span class="rd">Needs: nurse + CNA</span></button>
+  <button class="rb" data-tool="lab" data-desc="Needs: dept. attending" onclick="sel('lab')"><span class="rn">Lab</span><span class="rp">$2,800</span><span class="rd">Needs: dept. attending</span></button>
+  <div class="sep"></div>
+  <h2>Tools</h2>
+  <button class="rb" data-tool="demolish" data-desc="Remove tile/room" onclick="sel('demolish')"><span class="rn" style="color:var(--color-text-danger)">Demolish</span><span class="rd">Remove tile/room</span></button>
+</div>
+<div id="cw">
+  <div id="actionleft">
+    <button class="action-card" onclick="focusBuilder()"><span class="ac-icon">BLD</span><span class="ac-title">Build Room</span><span class="ac-sub">Open the build panel</span></button>
+  </div>
+  <div id="actionright">
+    <button class="action-card" onclick="openStaff()"><span class="ac-icon">STA</span><span class="ac-title">Edit Staff</span><span class="ac-sub">Hire and review shifts</span></button>
+    <button class="action-card" onclick="focusBudget()"><span class="ac-icon">BGT</span><span class="ac-title">Budget</span><span class="ac-sub">Review money and debt</span></button>
+  </div>
+  <canvas id="c"></canvas>
+  <div id="builddock">
+    <button class="dockbtn" data-tool="corridor" onclick="sel('corridor')">Corridor<small>Paths</small></button>
+    <button class="dockbtn" data-tool="reception" onclick="sel('reception')">Reception<small>Front desk</small></button>
+    <button class="dockbtn" data-tool="waiting_room" onclick="sel('waiting_room')">Waiting<small>Queue</small></button>
+    <button class="dockbtn" data-tool="gp" onclick="sel('gp')">GP<small>Clinic</small></button>
+    <button class="dockbtn" data-tool="er" onclick="sel('er')">ER<small>Urgent</small></button>
+    <button class="dockbtn" data-tool="ward" onclick="sel('ward')">Ward<small>Beds</small></button>
+    <button class="dockbtn" data-tool="surgery" onclick="sel('surgery')">Surgery<small>OR</small></button>
+    <button class="dockbtn" data-tool="demolish" onclick="sel('demolish')">Clear<small>Remove</small></button>
+  </div>
+  <div id="tt"></div>
+  <div id="titlescreen">
+    <div id="titlebox">
+      <h2>City Hospital</h2>
+      <p>Build a clinic, unlock new departments, keep the facility clean, and survive the budget pressure long enough to grow into a real hospital.</p>
+      <div class="title-actions">
+        <button class="title-btn primary" onclick="startGame()">Start Game</button>
+        <button class="title-btn" onclick="loadGame()">Load Save</button>
+        <button class="title-btn" onclick="restartGame()">Restart Run</button>
+        <button class="title-btn" onclick="quitToTitle()">Quit To Title</button>
+      </div>
+    </div>
+  </div>
+  <div id="gameover">
+    <div id="gameoverbox">
+      <h3>Hospital Closed</h3>
+      <p id="gameovermsg"></p>
+      <div class="go-stat" id="go-days"></div>
+      <div class="go-stat" id="go-treated"></div>
+      <div class="go-stat" id="go-score"></div>
+      <div class="title-actions" style="margin-top:12px">
+        <button class="title-btn primary" onclick="restartGame()">Restart Run</button>
+        <button class="title-btn" onclick="quitToTitle()">Quit To Title</button>
+      </div>
+    </div>
+  </div>
+  <div id="staffmodal">
+    <div id="staffbox">
+      <button class="modal-close" onclick="closeStaff()">Close</button>
+      <h3 id="modal-title">Hire Staff</h3>
+      <div id="staff-actions" class="staff-actions"></div>
+      <div id="staff-tabs" style="display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap"></div>
+      <div id="staff-content" class="staff-grid"></div>
+    </div>
+  </div>
+</div>
+<div id="rp">
+  <h2>Stats</h2>
+  <div class="ic"><div class="lbl">Money</div><div class="val" id="rmoney">$50,000</div></div>
+  <div class="ic"><div class="lbl">Inspection grade</div><div class="val" id="rgrade">A+</div><div class="sub" id="rgradewarn">Monthly inspectors are fully satisfied</div></div>
+  <div class="ic"><div class="lbl">Reputation</div><div class="val" id="rrep">70</div><div class="sub" id="rrepwarn">Stable standing</div></div>
+  <div class="ic"><div class="lbl">Cleanliness</div><div class="val" id="rclean">78%</div><div class="sub" id="rcleanwarn">Hire janitors to keep wards safe</div></div>
+  <div class="ic"><div class="lbl">People waiting</div><div class="val" id="rwaiting">0</div><div class="sub" id="rwaitingwarn">A waiting room keeps queues under control</div></div>
+  <div class="ic"><div class="lbl">Nurse coverage</div><div class="val" id="rnursecov">0 / 0</div><div class="sub" id="rnursecovwarn">Need 1 nurse per 4 rooms on the active shift</div></div>
+  <div class="ic"><div class="lbl">CNA coverage</div><div class="val" id="rcnacov">0 / 0</div><div class="sub" id="rcnacovwarn">Need 1 CNA per 2 office rooms on the active shift</div></div>
+  <div class="ic"><div class="lbl">Monthly income</div><div class="val" id="rincome">$0</div></div>
+  <div class="ic"><div class="lbl">Wage bill/mo</div><div class="val" id="rwages">$0</div></div>
+  <div class="ic"><div class="lbl">Debt watch</div><div class="val" id="rdebt">0 days</div><div class="sub">10 days in debt triggers closure</div></div>
+  <div class="ic"><div class="lbl">Treated</div><div class="val" id="rtreated">0</div><div class="sub">Goal: 50 patients</div></div>
+  <h2 style="margin-top:3px">Daily Goal</h2>
+  <div id="dailygoal"></div>
+  <h2 style="margin-top:3px">Dispatch</h2>
+  <div id="dispatchjobs"></div>
+  <h2 style="margin-top:3px">Research</h2>
+  <div id="researchpanel"></div>
+  <h2 style="margin-top:3px">Log</h2>
+  <div id="log"></div>
+  <h2 style="margin-top:3px">Contracts</h2>
+  <div id="contracts"></div>
+  <h2 style="margin-top:3px">Milestones</h2>
+  <div id="milestones"></div>
+</div>
+<div id="bot">
+  <span id="hint">Draw corridors first. Then place rooms. Open "+ Staff" to hire — unstaffed rooms run at half speed.</span>
+</div>
+</div>
+
+<script>
+const T=44,COLS=20,ROWS=12;
+const cv=document.getElementById('c'),ctx=cv.getContext('2d');
+cv.width=COLS*T;cv.height=ROWS*T;
+
+const RDEFS={
+  reception:{name:'Reception',color:'#a8d5a2',border:'#4a8e44',cost:500,w:2,h:1,cap:6,icon:'R',rev:50,tt:2,staffRole:'clerical'},
+  waiting_room:{name:'Waiting Room',color:'#f2d7b0',border:'#b98542',cost:900,w:3,h:2,cap:10,icon:'WR',rev:0,tt:0,staffRole:null},
+  dispatch_office:{name:'Dispatch Office',color:'#c3d8f0',border:'#4b7cab',cost:3200,w:2,h:2,cap:2,icon:'DO',rev:0,tt:0,staffRole:'dispatcher'},
+  gp:{name:'GP Office',color:'#9ec8e8',border:'#3a80b8',cost:1500,w:2,h:2,cap:3,icon:'GP',rev:200,tt:3,staffRole:'gp_doc'},
+  er:{name:'ER',color:'#f4a0a0',border:'#b83030',cost:3000,w:3,h:2,cap:5,icon:'ER',rev:500,tt:2,staffRole:'er_doc'},
+  head_office:{name:'Dept. Head Office',color:'#d3b8ea',border:'#7d57ab',cost:2200,w:2,h:2,cap:1,icon:'DH',rev:0,tt:0,staffRole:'dept_attending'},
+  xray:{name:'X-Ray',color:'#c4b4e8',border:'#6050b8',cost:2000,w:2,h:2,cap:2,icon:'XR',rev:300,tt:4,staffRole:'dept_attending'},
+  pharmacy:{name:'Pharmacy',color:'#f0d080',border:'#a88020',cost:1200,w:2,h:1,cap:4,icon:'Rx',rev:150,tt:1,staffRole:'pharmacist'},
+  surgery:{name:'Surgery',color:'#f0c090',border:'#b06820',cost:6000,w:3,h:3,cap:2,icon:'Op',rev:1200,tt:8,staffRole:'surgeon',supportRoles:['er_attending']},
+  ward:{name:'Ward',color:'#b0ddd4',border:'#408880',cost:2500,w:3,h:2,cap:8,icon:'Wd',rev:180,tt:6,staffRole:'nurse',supportRoles:['cna']},
+  lab:{name:'Lab',color:'#cce0a0',border:'#689820',cost:2800,w:2,h:2,cap:3,icon:'Lb',rev:250,tt:3,staffRole:'dept_attending'},
+};
+
+const ROLES={
+  clerical:{label:'Clerical Staff',color:'#5a9e52',baseSalary:1200},
+  gp_doc:{label:'GP Doctor',color:'#3a80b8',baseSalary:4500},
+  er_doc:{label:'ER Doctor',color:'#b83030',baseSalary:5500},
+  er_attending:{label:'ER Attending',color:'#b06820',baseSalary:8000},
+  dept_attending:{label:'Dept. Attending',color:'#6050b8',baseSalary:6500},
+  surgeon:{label:'Surgeon',color:'#935d1c',baseSalary:9000},
+  nurse:{label:'Nurse',color:'#2a8c9d',baseSalary:3200},
+  cna:{label:'CNA',color:'#5470a8',baseSalary:2200},
+  dispatcher:{label:'Dispatcher',color:'#4b7cab',baseSalary:2800},
+  driver:{label:'Driver',color:'#6d8f4c',baseSalary:2600},
+  pharmacist:{label:'Pharmacist',color:'#a88020',baseSalary:3500},
+  janitor:{label:'Janitor',color:'#627d62',baseSalary:1800},
+};
+
+const STARTING_TOOLS=['corridor','reception','waiting_room','gp','pharmacy','demolish'];
+const STARTING_ROLES=['clerical','gp_doc','pharmacist','janitor','nurse','cna'];
+const MILESTONES=[
+  {
+    id:'urgent-care',
+    name:'Urgent Care License',
+    desc:'Treat 6 patients to unlock Emergency Room construction and ER doctor hiring.',
+    progress:()=>`${Math.min(totalTreated,6)}/6 patients treated`,
+    met:()=>totalTreated>=6,
+    unlockTools:['er'],
+    unlockRoles:['er_doc'],
+  },
+  {
+    id:'dept-admin',
+    name:'Department Administration',
+    desc:'Reach 55 reputation to unlock Dept. Head Office construction and department attendings.',
+    progress:()=>`${Math.min(Math.round(reputation),55)}/55 reputation`,
+    met:()=>reputation>=55,
+    unlockTools:['head_office'],
+    unlockRoles:['dept_attending'],
+  },
+  {
+    id:'xray-license',
+    name:'Diagnostic Imaging',
+    desc:'Build a Dept. Head Office to unlock X-Ray.',
+    progress:()=>`${Math.min(rooms.filter(r=>r.type==='head_office').length,1)}/1 Dept. Head Office built`,
+    met:()=>rooms.some(r=>r.type==='head_office'),
+    unlockTools:['xray'],
+    unlockRoles:[],
+  },
+  {
+    id:'inpatient',
+    name:'Inpatient Expansion',
+    desc:'Treat 14 patients and build a Dept. Head Office to open Ward construction.',
+    progress:()=>`${Math.min(totalTreated,14)}/14 patients treated, ${Math.min(rooms.filter(r=>r.type==='head_office').length,1)}/1 office`,
+    met:()=>totalTreated>=14&&rooms.some(r=>r.type==='head_office'),
+    unlockTools:['ward'],
+    unlockRoles:[],
+  },
+  {
+    id:'lab-charter',
+    name:'Clinical Lab Charter',
+    desc:'Treat 18 patients, reach 60 reputation, and build a Dept. Head Office to unlock the Lab.',
+    progress:()=>`${Math.min(totalTreated,18)}/18 patients, ${Math.min(Math.round(reputation),60)}/60 reputation, ${Math.min(rooms.filter(r=>r.type==='head_office').length,1)}/1 office`,
+    met:()=>totalTreated>=18&&reputation>=60&&rooms.some(r=>r.type==='head_office'),
+    unlockTools:['lab'],
+    unlockRoles:[],
+  },
+  {
+    id:'surgery-license',
+    name:'Surgical License',
+    desc:'Treat 28 patients and reach 70 reputation to unlock Surgery, surgeons, and ER attendings.',
+    progress:()=>`${Math.min(totalTreated,28)}/28 patients, ${Math.min(Math.round(reputation),70)}/70 reputation`,
+    met:()=>totalTreated>=28&&reputation>=70,
+    unlockTools:['surgery'],
+    unlockRoles:['surgeon','er_attending'],
+  },
+];
+const HOSPITAL_GRADES=['A+','A','B','C','D','F'];
+const CONTRACT_LIBRARY=[
+  {
+    id:'community-outreach',
+    title:'Community Outreach Grant',
+    desc:'Treat 5 pro bono cases for the neighborhood clinic fund.',
+    rewardText:'Reward: $5,000 donor bonus',
+    create:()=>({type:'free_cases',target:5,progress:0,reward:{kind:'money',amount:5000}})
+  },
+  {
+    id:'celebrity-visit',
+    title:'Celebrity Wellness Visit',
+    desc:'Discreetly treat one celebrity case to earn a donated GP room.',
+    rewardText:'Reward: 1 free GP room',
+    create:()=>({type:'celebrity',target:1,progress:0,spawned:false,reward:{kind:'free_room',roomType:'gp',amount:1}})
+  },
+];
+const STAFF_REROLL_COST=750;
+const SHIFTS=['day','night'];
+const SAVE_KEY='cityHospitalBuilderSaveV1';
+const REP_LONG_WAIT_THRESHOLD=16;
+const REP_UNTREATED_LEAVE_THRESHOLD=28;
+const RESEARCH_TREE=[
+  {
+    id:'dispatch_network',
+    name:'Dispatch Network',
+    desc:'Build a dispatch office to coordinate patient flow across the hospital.',
+    cost:6000,
+    days:4,
+    requires:[],
+    unlockTools:['dispatch_office'],
+    unlockRoles:['dispatcher','driver'],
+    unlockFeatures:[],
+    rewardText:'Unlocks Dispatch Office, Dispatchers, and Drivers'
+  },
+  {
+    id:'triage_protocols',
+    name:'Triage Protocols',
+    desc:'Formal triage buys more time before long waits damage public trust.',
+    cost:4500,
+    days:3,
+    requires:['dispatch_network'],
+    unlockTools:[],
+    unlockRoles:[],
+    unlockFeatures:['triage_protocols'],
+    rewardText:'Patients tolerate longer waits'
+  },
+  {
+    id:'sterile_workflow',
+    name:'Sterile Workflow',
+    desc:'Standardized cleaning routines reduce grime buildup throughout the campus.',
+    cost:7000,
+    days:5,
+    requires:['dispatch_network'],
+    unlockTools:[],
+    unlockRoles:[],
+    unlockFeatures:['sterile_workflow'],
+    rewardText:'Improves daily cleanliness'
+  }
+];
+
+const FIRST_NAMES=['Alex','Sam','Jordan','Morgan','Taylor','Casey','Riley','Quinn','Avery','Blake','Drew','Hayden','Jamie','Kendall','Logan','Mason','Parker','Reese','Skyler','Tatum','Chris','Dana','Evan','Frankie','Glen'];
+const LAST_NAMES=['Smith','Johnson','Williams','Brown','Jones','Garcia','Miller','Davis','Wilson','Moore','Taylor','Anderson','Thomas','Jackson','White','Harris','Martin','Thompson','Clark','Lewis','Lee','Walker','Hall','Young','Allen'];
+
+const GOOD_TRAITS=[
+  {id:'quick_hands',label:'Quick hands',desc:'20% faster treatment',speedMult:0.8},
+  {id:'bedside_manner',label:'Bedside manner',desc:'Patients score +2 per visit',scoreMult:2},
+  {id:'eagle_eye',label:'Eagle eye',desc:'Catches complications, +15% revenue',revMult:1.15},
+  {id:'team_player',label:'Team player',desc:'Adjacent rooms get +10% speed',aura:true},
+  {id:'veteran',label:'Veteran',desc:'Never makes errors',noError:true},
+  {id:'efficient',label:'Efficient',desc:'10% lower salary cost',salaryDiscount:0.9},
+  {id:'night_owl',label:'Night owl',desc:'Faster at night shifts',speedMult:0.85},
+  {id:'researcher',label:'Researcher',desc:'+20% revenue in diagnostics',revMult:1.2},
+];
+const BAD_TRAITS=[
+  {id:'slow_worker',label:'Slow worker',desc:'30% slower treatment',speedMult:1.3},
+  {id:'forgetful',label:'Forgetful',desc:'Occasionally loses patient notes',loseScore:true},
+  {id:'expensive_taste',label:'Expensive taste',desc:'20% higher salary',salaryMult:1.2},
+  {id:'chatty',label:'Chatty',desc:'Patients wait longer to be seen',waitAdd:2},
+  {id:'prone_to_errors',label:'Prone to errors',desc:'5% chance of re-treatment',errorChance:0.05},
+  {id:'drama',label:'Drama magnet',desc:'Triggers random events more often',dramaEvent:true},
+  {id:'clock_watcher',label:'Clock watcher',desc:'Leaves early, -10% capacity',capReduce:0.1},
+];
+
+let money=50000,day=1,score=0,totalTreated=0,monthlyInc=0,incAccum=0,reputation=70,cleanliness=78;
+let grid=Array.from({length:ROWS},()=>Array(COLS).fill(null));
+let rooms=[],patients=[],staff=[],logs=[];
+let selTool=null,gameTime=0,speed=1,paused=false,patId=0,staffId=0;
+let hover={x:-1,y:-1},dragging=false;
+let staffPool=[],currentTab='clerical';
+let debtDays=0,lowRepDays=0,dirtyDays=0,gameOver=false,loseReason='';
+let unlockedTools=new Set(STARTING_TOOLS),unlockedRoles=new Set(STARTING_ROLES),unlockedMilestones=new Set();
+let researchedTech=new Set(),unlockedFeatures=new Set(),activeResearch=null;
+let dispatchJobs=[],dispatchJobId=0;
+let hasStarted=false;
+let gradeIndex=0,gradeNote='Monthly inspectors are fully satisfied';
+let monthRepAccum=0,monthCleanAccum=0,monthWaitAccum=0,monthSamples=0,monthDebtDays=0,monthHighWaitDays=0;
+let contractOffer=null,activeContract=null,lastContractId=null;
+let freeBuildCredits={gp:0};
+let dailyGoal=null;
+let dailyStats={treated:0,gpVisits:0,roomsBuilt:0,rolesHired:{},cleanDays:0};
+let staffShiftFilter='day';
+
+function randName(){return FIRST_NAMES[Math.floor(Math.random()*FIRST_NAMES.length)]+' '+LAST_NAMES[Math.floor(Math.random()*LAST_NAMES.length)];}
+
+function genStaffMember(role,shift=null){
+  const rd=ROLES[role];
+  const numGood=Math.floor(Math.random()*2)+1;
+  const numBad=Math.floor(Math.random()*2);
+  const goodPick=[...GOOD_TRAITS].sort(()=>Math.random()-.5).slice(0,numGood);
+  const badPick=[...BAD_TRAITS].sort(()=>Math.random()-.5).slice(0,numBad);
+  const traits=[...goodPick.map(t=>({...t,type:'good'})),...badPick.map(t=>({...t,type:'bad'}))];
+  let salary=rd.baseSalary;
+  traits.forEach(t=>{if(t.salaryDiscount)salary=Math.round(salary*t.salaryDiscount);if(t.salaryMult)salary=Math.round(salary*t.salaryMult);});
+  salary+=Math.round((Math.random()-.5)*salary*0.15);
+  return{id:staffId++,name:randName(),role,shift:shift||SHIFTS[Math.floor(Math.random()*SHIFTS.length)],traits,salary,assignedRoom:null,hired:false,mood:100,energy:100,burnoutLogged:false};
+}
+
+function generatePool(){
+  staffPool=[];
+  Object.keys(ROLES).forEach(role=>{SHIFTS.forEach(shift=>{for(let i=0;i<2;i++)staffPool.push(genStaffMember(role,shift));});});
+}
+generatePool();
+
+function setMenuVisibility(showTitle){
+  document.getElementById('titlescreen').classList.toggle('hidden',!showTitle);
+  document.getElementById('gameover').classList.remove('open');
+}
+
+function currentShift(){return gameTime%10<5?'day':'night';}
+function currentShiftLabel(){return currentShift()==='day'?'Day':'Night';}
+function getRoomRoles(rm){const d=RDEFS[rm.type];return[d.staffRole,...(d.supportRoles||[])].filter(Boolean);}
+function roleUsesGlobalCoverage(role){return role==='nurse'||role==='cna'||role==='driver';}
+function isCnaCoverageRoom(rm){return !!rm&&['reception','gp','er','xray','pharmacy','lab'].includes(rm.type);}
+function roomSupportsRole(rm,role){
+  if(roleUsesGlobalCoverage(role))return false;
+  return getRoomRoles(rm).includes(role);
+}
+function getStaffForRoleShift(role,shift=currentShift()){return staff.find(s=>s.hired&&s.role===role&&s.shift===shift)||null;}
+ function getAssignedStaffForRoomRole(roomId,role,shift=currentShift()){
+  if(roleUsesGlobalCoverage(role))return getStaffForRoleShift(role,shift);
+  return staff.find(s=>s.hired&&s.assignedRoom===roomId&&s.role===role&&s.shift===shift)||null;
+}
+function getStaffForRoom(roomId){
+  const rm=rooms.find(r=>r.id===roomId);
+  if(!rm||!RDEFS[rm.type].staffRole)return null;
+  return getAssignedStaffForRoomRole(roomId,RDEFS[rm.type].staffRole);
+}
+function getJanitors(){return staff.filter(s=>s.hired&&s.role==='janitor');}
+function clamp(n,min,max){return Math.max(min,Math.min(max,n));}
+function visibleByShift(member){return staffShiftFilter==='all'||member.shift===staffShiftFilter;}
+function setStaffShiftFilter(filter){staffShiftFilter=filter;renderStaffModal();}
+function requiredNursesPerShift(){return Math.ceil(rooms.filter(r=>r.type!=='head_office').length/4);}
+function requiredCnasPerShift(){return Math.ceil(rooms.filter(r=>isCnaCoverageRoom(r)).length/2);}
+function assignedCoverageCount(role,shift,predicate){
+  if(roleUsesGlobalCoverage(role))return staff.filter(s=>s.hired&&s.shift===shift&&s.role===role).length;
+  return staff.filter(s=>s.hired&&s.shift===shift&&s.role===role&&s.assignedRoom&&predicate(rooms.find(r=>r.id===s.assignedRoom))).length;
+}
+function coverageStatus(shift=currentShift()){
+  const nurseNeeded=requiredNursesPerShift();
+  const cnaNeeded=requiredCnasPerShift();
+  const nurseAssigned=assignedCoverageCount('nurse',shift,rm=>rm&&rm.type!=='head_office');
+  const cnaAssigned=assignedCoverageCount('cna',shift,rm=>isCnaCoverageRoom(rm));
+  return{
+    nurseNeeded,
+    cnaNeeded,
+    nurseAssigned,
+    cnaAssigned,
+    nurseShort:Math.max(0,nurseNeeded-nurseAssigned),
+    cnaShort:Math.max(0,cnaNeeded-cnaAssigned)
+  };
+}
+function isToolUnlocked(tool){return unlockedTools.has(tool);}
+function isRoleUnlocked(role){return unlockedRoles.has(role);}
+function hasFeature(feature){return unlockedFeatures.has(feature);}
+function getResearchDef(id){return RESEARCH_TREE.find(t=>t.id===id)||null;}
+function getResearchForTool(tool){return RESEARCH_TREE.find(t=>(t.unlockTools||[]).includes(tool))||null;}
+function getResearchForFeature(feature){return RESEARCH_TREE.find(t=>(t.unlockFeatures||[]).includes(feature))||null;}
+function getResearchForRole(role){return RESEARCH_TREE.find(t=>(t.unlockRoles||[]).includes(role))||null;}
+function isResearchComplete(id){return researchedTech.has(id);}
+function canResearch(tech){return !activeResearch&&!researchedTech.has(tech.id)&&tech.requires.every(req=>researchedTech.has(req));}
+function getMilestoneForTool(tool){return MILESTONES.find(m=>m.unlockTools.includes(tool))||null;}
+function getMilestoneForRole(role){return MILESTONES.find(m=>m.unlockRoles.includes(role))||null;}
+function getToolLockedText(tool){
+  const milestone=getMilestoneForTool(tool);
+  if(milestone)return`Unlock: ${milestone.name}`;
+  const research=getResearchForTool(tool);
+  return research?`Research: ${research.name}`:'Locked';
+}
+function getRoleLockedText(role){
+  const milestone=getMilestoneForRole(role);
+  if(milestone)return`Unlocks with ${milestone.name}`;
+  const research=getResearchForRole(role);
+  return research?`Research: ${research.name}`:'Locked';
+}
+function getRoomRequirementText(type){
+  const d=RDEFS[type];
+  if(!d)return'';
+  if(type==='waiting_room')return'Needs: reception link';
+  if(!d.staffRole&&!(d.supportRoles||[]).length)return'Needs: seating';
+  return`Needs: ${[ROLES[d.staffRole].label,...(d.supportRoles||[]).map(role=>ROLES[role].label)].join(' + ')}`;
+}
+function getCoverageWarning(assigned,needed,label){
+  if(needed===0)return `${label} coverage not needed yet`;
+  if(assigned>=needed)return `${label} coverage is meeting the active shift target`;
+  return `${label} shortage: ${needed-assigned} more needed on the active shift`;
+}
+function waitingPatientsCount(){return patients.filter(p=>p.state==='waiting').length;}
+function hasOperationalRoom(type){return rooms.some(r=>r.type===type&&isConn(r)&&(!RDEFS[r.type].staffRole||!!getStaffForRoom(r.id)));}
+function countOperationalRooms(type,shift=currentShift()){return rooms.filter(r=>r.type===type&&isConn(r)&&(!RDEFS[r.type].staffRole||!!getAssignedStaffForRoomRole(r.id,RDEFS[r.type].staffRole,shift))).length;}
+function getHiredRoleCount(role,shift=currentShift()){return staff.filter(s=>s.hired&&s.role===role&&s.shift===shift).length;}
+function getEffectiveLongWaitThreshold(){return REP_LONG_WAIT_THRESHOLD+(hasFeature('triage_protocols')?6:0);}
+function getEffectiveUntreatedLeaveThreshold(){return REP_UNTREATED_LEAVE_THRESHOLD+(hasFeature('triage_protocols')?8:0);}
+function getDispatchGenerationCapacity(shift=currentShift()){return countOperationalRooms('dispatch_office',shift);}
+function getDispatchProgressCapacity(shift=currentShift()){return Math.min(getDispatchGenerationCapacity(shift),getHiredRoleCount('driver',shift));}
+function makeDispatchJob(){
+  const templates=[
+    {title:'Patient Transfer Run',desc:'Move a stabilized patient between care sites.',money:[900,1300],rep:2,days:2},
+    {title:'Supply Courier Route',desc:'Rush urgent medication and blood packs to a satellite clinic.',money:[700,1100],rep:1,days:1},
+    {title:'Field Pickup Call',desc:'Coordinate a safe pickup from a city incident scene.',money:[1200,1800],rep:3,days:3}
+  ];
+  const pick=templates[Math.floor(Math.random()*templates.length)];
+  const rewardMoney=pick.money[0]+Math.floor(Math.random()*(pick.money[1]-pick.money[0]+1));
+  return{id:dispatchJobId++,title:pick.title,desc:pick.desc,rewardMoney,rewardRep:pick.rep,daysLeft:pick.days,totalDays:pick.days,status:'queued'};
+}
+function generateDispatchJobs(shift=currentShift()){
+  const capacity=getDispatchGenerationCapacity(shift);
+  if(capacity<=0||dispatchJobs.length>=5)return;
+  const attempts=Math.min(2,capacity);
+  for(let i=0;i<attempts;i++){
+    if(dispatchJobs.length>=5)break;
+    if(Math.random()<0.65){
+      const job=makeDispatchJob();
+      dispatchJobs.push(job);
+      addLog(`Dispatch received a new job: ${job.title}.`,'');
+    }
+  }
+}
+function progressDispatchJobs(shift=currentShift()){
+  const capacity=getDispatchProgressCapacity(shift);
+  if(capacity<=0)return;
+  const working=dispatchJobs.slice(0,capacity);
+  working.forEach(job=>{
+    job.status='in_progress';
+    job.daysLeft=Math.max(0,job.daysLeft-1);
+    if(job.daysLeft<=0){
+      money+=job.rewardMoney;
+      reputation=clamp(reputation+job.rewardRep,0,100);
+      addLog(`Dispatch completed: ${job.title}. +$${job.rewardMoney.toLocaleString()} and +${job.rewardRep} reputation.`,'g');
+    }
+  });
+  dispatchJobs=dispatchJobs.filter(job=>job.daysLeft>0);
+}
+function renderDispatchJobs(){
+  const wrap=document.getElementById('dispatchjobs');
+  if(!wrap)return;
+  const generation=getDispatchGenerationCapacity();
+  const progress=getDispatchProgressCapacity();
+  let html=`<div class="dispatch-card"><div class="dispatch-title">Dispatch Ops</div><div class="dispatch-desc">Office capacity: ${generation} · Drivers ready: ${getHiredRoleCount('driver')}</div><div class="dispatch-meta">${generation>0?'Jobs will appear over time.':'Build and staff a Dispatch Office to receive calls.'}</div></div>`;
+  if(!dispatchJobs.length){
+    html+=`<div class="dispatch-card"><div class="dispatch-title">No Active Jobs</div><div class="dispatch-desc">${generation>0?'The board is clear for now.':'Research Dispatch Network, build the office, and hire a dispatcher.'}</div><div class="dispatch-meta">${progress>0?'Drivers are ready for the next call.':'Hire drivers to complete transport jobs.'}</div></div>`;
+  }else{
+    html+=dispatchJobs.map(job=>`<div class="dispatch-card ${job.status==='in_progress'?'active':''}"><div class="dispatch-title">${job.title}</div><div class="dispatch-desc">${job.desc}</div><div class="dispatch-meta">Time left: ${job.daysLeft}/${job.totalDays} days</div><div class="dispatch-reward">Reward: $${job.rewardMoney.toLocaleString()} · +${job.rewardRep} reputation</div></div>`).join('');
+  }
+  wrap.innerHTML=html;
+}
+function roomAdjacentToType(rc,rr2,rw,rh,type){
+  return rooms.some(rm=>{
+    if(rm.type!==type)return false;
+    const horizOverlap=Math.max(rc,rm.c)<Math.min(rc+rw,rm.c+rm.w);
+    const vertOverlap=Math.max(rr2,rm.r)<Math.min(rr2+rh,rm.r+rm.h);
+    const touchesHoriz=horizOverlap&&(rr2+rh===rm.r||rm.r+rm.h===rr2);
+    const touchesVert=vertOverlap&&(rc+rw===rm.c||rm.c+rm.w===rc);
+    return touchesHoriz||touchesVert;
+  });
+}
+function waitingRoomConnectedToReception(rm){return !!rm&&roomAdjacentToType(rm.c,rm.r,rm.w,rm.h,'reception');}
+function waitingRoomCapacity(){return rooms.filter(r=>r.type==='waiting_room'&&isConn(r)&&waitingRoomConnectedToReception(r)).reduce((sum,r)=>sum+RDEFS[r.type].cap,0);}
+function effectiveWaitingCapacity(){return 2+waitingRoomCapacity();}
+function getWaitingStatus(waitingCount=waitingPatientsCount()){
+  const capacity=effectiveWaitingCapacity();
+  if(waitingCount===0)return'No patients are currently waiting';
+  if(waitingCount<=capacity)return `Queue is under control (${waitingCount}/${capacity} seats in use)`;
+  return `Waiting room overflow: ${waitingCount-capacity} patients are standing in the corridor`;
+}
+function applyMilestoneUnlocks(){
+  const newlyUnlocked=[];
+  for(const milestone of MILESTONES){
+    if(unlockedMilestones.has(milestone.id)||!milestone.met())continue;
+    unlockedMilestones.add(milestone.id);
+    milestone.unlockTools.forEach(t=>unlockedTools.add(t));
+    milestone.unlockRoles.forEach(r=>unlockedRoles.add(r));
+    newlyUnlocked.push(milestone);
+  }
+  newlyUnlocked.forEach(milestone=>{
+    const names=[
+      ...milestone.unlockTools.map(t=>RDEFS[t].name),
+      ...milestone.unlockRoles.map(r=>ROLES[r].label)
+    ];
+    addLog(`${milestone.name} reached. Unlocked: ${names.join(', ')}.`,'g');
+  });
+}
+function renderMilestones(){
+  const wrap=document.getElementById('milestones');
+  wrap.innerHTML=MILESTONES.map(m=>{
+    const done=unlockedMilestones.has(m.id);
+    return`<div class="mc ${done?'done':''}">
+      <div class="mt">${m.name}</div>
+      <div class="md">${m.desc}</div>
+      <div class="mp">${done?'Unlocked':m.progress()}</div>
+    </div>`;
+  }).join('');
+}
+function startResearch(id){
+  const tech=getResearchDef(id);
+  if(!tech)return;
+  if(activeResearch){addLog('Research lab is already busy with another project.','w');return;}
+  if(researchedTech.has(id)){addLog(`${tech.name} has already been completed.`,'w');return;}
+  if(!tech.requires.every(req=>researchedTech.has(req))){addLog(`${tech.name} is not available yet.`,`w`);return;}
+  if(money<tech.cost){addLog(`Not enough money to begin ${tech.name}.`,'b');return;}
+  money-=tech.cost;
+  activeResearch={id:tech.id,daysLeft:tech.days,totalDays:tech.days};
+  addLog(`Research started: ${tech.name}. -$${tech.cost.toLocaleString()}`,'');
+  updateUI();
+}
+function completeResearch(id){
+  const tech=getResearchDef(id);
+  if(!tech)return;
+  researchedTech.add(id);
+  tech.unlockTools.forEach(tool=>unlockedTools.add(tool));
+  (tech.unlockRoles||[]).forEach(role=>unlockedRoles.add(role));
+  tech.unlockFeatures.forEach(feature=>unlockedFeatures.add(feature));
+  activeResearch=null;
+  addLog(`Research complete: ${tech.name}. ${tech.rewardText}.`,'g');
+  updateUI();
+}
+function progressResearch(){
+  if(!activeResearch)return;
+  activeResearch.daysLeft=Math.max(0,activeResearch.daysLeft-1);
+  if(activeResearch.daysLeft<=0)completeResearch(activeResearch.id);
+}
+function renderResearch(){
+  const wrap=document.getElementById('researchpanel');
+  if(!wrap)return;
+  let html='';
+  if(activeResearch){
+    const tech=getResearchDef(activeResearch.id);
+    html+=`<div class="research-card active">
+      <div class="research-title">${tech?.name||'Research Project'}</div>
+      <div class="research-desc">${tech?.desc||''}</div>
+      <div class="research-meta">Progress: ${activeResearch.totalDays-activeResearch.daysLeft}/${activeResearch.totalDays} days</div>
+      <div class="research-reward">${tech?.rewardText||''}</div>
+    </div>`;
+  }
+  const available=RESEARCH_TREE.filter(tech=>!researchedTech.has(tech.id)&&activeResearch?.id!==tech.id);
+  if(!available.length&&!activeResearch){
+    html='<div class="research-card"><div class="research-title">Research Complete</div><div class="research-desc">All current research projects are finished.</div></div>';
+  }else{
+    html+=available.map(tech=>{
+      const ready=tech.requires.every(req=>researchedTech.has(req));
+      const prereqText=tech.requires.length?`Requires: ${tech.requires.map(req=>getResearchDef(req)?.name||req).join(', ')}`:'No prerequisite';
+      return`<div class="research-card">
+        <div class="research-title">${tech.name}</div>
+        <div class="research-desc">${tech.desc}</div>
+        <div class="research-meta">Cost: $${tech.cost.toLocaleString()} · Time: ${tech.days} days</div>
+        <div class="research-meta">${prereqText}</div>
+        <div class="research-reward">${tech.rewardText}</div>
+        <button onclick="startResearch('${tech.id}')" ${!canResearch(tech)||money<tech.cost?'disabled':''}>${ready?'Start Research':'Locked'}</button>
+      </div>`;
+    }).join('');
+  }
+  wrap.innerHTML=html;
+}
+function pulsePanel(id){
+  const el=document.getElementById(id);
+  if(!el)return;
+  el.classList.remove('panel-pulse');
+  void el.offsetWidth;
+  el.classList.add('panel-pulse');
+  setTimeout(()=>el.classList.remove('panel-pulse'),560);
+}
+function focusBuilder(){
+  document.getElementById('sidebar').scrollTop=0;
+  document.getElementById('hint').textContent='Build menu ready. Pick a room from the left panel or the quick dock below.';
+  pulsePanel('sidebar');
+}
+function focusBudget(){
+  document.getElementById('rp').scrollTop=0;
+  document.getElementById('hint').textContent='Budget panel highlighted. Watch debt, wages, waiting pressure, and coverage.';
+  pulsePanel('rp');
+}
+function updateDockButtons(){
+  document.querySelectorAll('.dockbtn[data-tool]').forEach(btn=>{
+    const tool=btn.dataset.tool;
+    const unlocked=isToolUnlocked(tool);
+    btn.disabled=!unlocked;
+    btn.classList.toggle('locked',!unlocked);
+    btn.classList.toggle('sel',selTool===tool);
+  });
+}
+function updateUnlockButtons(){
+  document.querySelectorAll('.rb[data-tool]').forEach(btn=>{
+    const tool=btn.dataset.tool;
+    const unlocked=isToolUnlocked(tool);
+    const def=RDEFS[tool];
+    btn.disabled=!unlocked;
+    btn.classList.toggle('locked',!unlocked);
+    const desc=btn.querySelector('.rd');
+    if(desc)desc.textContent=unlocked?(RDEFS[tool]?getRoomRequirementText(tool):btn.dataset.desc):getToolLockedText(tool);
+    if(def){
+      btn.style.background=unlocked?`linear-gradient(180deg, ${def.color}55, ${def.color}22)`: `linear-gradient(180deg, ${def.color}28, ${def.color}12)`;
+      btn.style.borderColor=def.border;
+      const name=btn.querySelector('.rn');
+      const price=btn.querySelector('.rp');
+      if(name)name.style.color=def.border;
+      if(price)price.style.color=def.border;
+    }else{
+      btn.style.background='';
+      btn.style.borderColor='';
+      const name=btn.querySelector('.rn');
+      const price=btn.querySelector('.rp');
+      if(name)name.style.color='';
+      if(price)price.style.color='';
+    }
+    if(!unlocked&&selTool===tool)selTool=null;
+  });
+  updateDockButtons();
+}
+function makeContractOffer(){
+  const pool=CONTRACT_LIBRARY.filter(c=>c.id!==lastContractId);
+  const pick=(pool.length?pool:CONTRACT_LIBRARY)[Math.floor(Math.random()*(pool.length?pool.length:CONTRACT_LIBRARY.length))];
+  lastContractId=pick.id;
+  contractOffer={id:pick.id,title:pick.title,desc:pick.desc,rewardText:pick.rewardText,...pick.create()};
+}
+function acceptContract(){
+  if(activeContract||!contractOffer)return;
+  activeContract={...contractOffer};
+  contractOffer=null;
+  addLog(`Accepted contract: ${activeContract.title}.`,'');
+  updateUI();
+}
+function completeActiveContract(){
+  if(!activeContract)return;
+  if(activeContract.reward.kind==='money'){
+    money+=activeContract.reward.amount;
+    addLog(`${activeContract.title} completed. Donor bonus: +$${activeContract.reward.amount.toLocaleString()}.`,'g');
+  }else if(activeContract.reward.kind==='free_room'){
+    freeBuildCredits[activeContract.reward.roomType]=(freeBuildCredits[activeContract.reward.roomType]||0)+activeContract.reward.amount;
+    addLog(`${activeContract.title} completed. Donated reward: ${RDEFS[activeContract.reward.roomType].name} room credit.`,'g');
+  }
+  activeContract=null;
+  makeContractOffer();
+  updateUI();
+}
+function renderContracts(){
+  const wrap=document.getElementById('contracts');
+  const freeGp=freeBuildCredits.gp?`<div class="cr">Free GP room credits: ${freeBuildCredits.gp}</div>`:'';
+  let html=freeGp;
+  if(activeContract){
+    html+=`<div class="cc">
+      <div class="ct">${activeContract.title}</div>
+      <div class="cd">${activeContract.desc}</div>
+      <div class="cp">Progress: ${activeContract.progress}/${activeContract.target}</div>
+      <div class="cr">${activeContract.reward.kind==='money'?`Reward on completion: $${activeContract.reward.amount.toLocaleString()}`:`Reward on completion: 1 free ${RDEFS[activeContract.reward.roomType].name}`}</div>
+    </div>`;
+  }else if(contractOffer){
+    html+=`<div class="cc">
+      <div class="ct">${contractOffer.title}</div>
+      <div class="cd">${contractOffer.desc}</div>
+      <div class="cr">${contractOffer.rewardText}</div>
+      <button onclick="acceptContract()">Accept Contract</button>
+    </div>`;
+  }else{
+    html+=`<div class="cc"><div class="cd">No donor request is active right now.</div></div>`;
+  }
+  wrap.innerHTML=html;
+}
+function resetDailyStats(){dailyStats={treated:0,gpVisits:0,roomsBuilt:0,rolesHired:{},cleanDays:0};}
+function makeDailyGoal(){
+  const options=[
+    {title:'Treat 3 patients today',desc:'Keep the doors moving and treat three patients before day end.',rewardText:'Reward: $600',progress:()=>`${Math.min(dailyStats.treated,3)}/3`,done:()=>dailyStats.treated>=3,reward:()=>{money+=600;}},
+    {title:'Complete 2 GP visits',desc:'Use the GP side of the clinic to complete two GP visits today.',rewardText:'Reward: +4 reputation',progress:()=>`${Math.min(dailyStats.gpVisits,2)}/2`,done:()=>dailyStats.gpVisits>=2,reward:()=>{reputation=clamp(reputation+4,0,100);}},
+    {title:'Build 1 room today',desc:'Expand the hospital by building one new room today.',rewardText:'Reward: $500',progress:()=>`${Math.min(dailyStats.roomsBuilt,1)}/1`,done:()=>dailyStats.roomsBuilt>=1,reward:()=>{money+=500;}},
+    {title:'Keep the hospital clean',desc:'Finish the day with cleanliness at 75% or better.',rewardText:'Reward: +3 reputation',progress:()=>`${Math.round(cleanliness)}% / 75%`,done:()=>cleanliness>=75,reward:()=>{reputation=clamp(reputation+3,0,100);}},
+  ];
+  if(isRoleUnlocked('nurse'))options.push({title:'Hire 1 nurse today',desc:'Bring in a nurse for inpatient coverage.',rewardText:'Reward: $700',progress:()=>`${Math.min(dailyStats.rolesHired.nurse||0,1)}/1`,done:()=>((dailyStats.rolesHired.nurse||0)>=1),reward:()=>{money+=700;}});
+  if(isRoleUnlocked('cna'))options.push({title:'Hire 1 CNA today',desc:'Bolster bedside support with one CNA hire.',rewardText:'Reward: $500',progress:()=>`${Math.min(dailyStats.rolesHired.cna||0,1)}/1`,done:()=>((dailyStats.rolesHired.cna||0)>=1),reward:()=>{money+=500;}});
+  if(isRoleUnlocked('surgeon'))options.push({title:'Hire 1 surgeon today',desc:'Prepare the surgical wing by hiring one surgeon.',rewardText:'Reward: +5 reputation',progress:()=>`${Math.min(dailyStats.rolesHired.surgeon||0,1)}/1`,done:()=>((dailyStats.rolesHired.surgeon||0)>=1),reward:()=>{reputation=clamp(reputation+5,0,100);}});
+  dailyGoal=options[Math.floor(Math.random()*options.length)];
+}
+function resolveDailyGoal(){
+  if(!dailyGoal)return;
+  if(dailyGoal.done()){
+    dailyGoal.reward();
+    addLog(`Daily goal complete: ${dailyGoal.title}. ${dailyGoal.rewardText.replace('Reward: ','')}.`,'g');
+  }else{
+    addLog(`Daily goal missed: ${dailyGoal.title}.`,'w');
+  }
+}
+function renderDailyGoal(){
+  const wrap=document.getElementById('dailygoal');
+  if(!dailyGoal){wrap.innerHTML='';return;}
+  wrap.innerHTML=`<div class="dg"><div class="gt">${dailyGoal.title}</div><div class="gd">${dailyGoal.desc}</div><div class="gp">Progress: ${dailyGoal.progress()}</div><div class="gr">${dailyGoal.rewardText}</div></div>`;
+}
+function staffEnergyFactor(s){
+  if(!s)return 1;
+  if(s.energy>=70)return 1;
+  if(s.energy>=40)return 1.15;
+  return 1.4;
+}
+function getSpeedMult(rm){
+  const d=RDEFS[rm.type];
+  const s=getAssignedStaffForRoomRole(rm.id,d.staffRole);if(!s)return 2;
+  let m=1;s.traits.forEach(t=>{if(t.speedMult)m*=t.speedMult;});
+  (d.supportRoles||[]).forEach(role=>{if(!getAssignedStaffForRoomRole(rm.id,role))m*=1.25;});
+  if(hasOperationalRoom('dispatch_office'))m*=0.92;
+  const coverage=coverageStatus();
+  if(rm.type!=='head_office')m*=1+(coverage.nurseShort*0.06);
+  if(isCnaCoverageRoom(rm))m*=1+(coverage.cnaShort*0.05);
+  return m*staffEnergyFactor(s);
+}
+function getRevMult(rm){
+  const d=RDEFS[rm.type];
+  const s=getAssignedStaffForRoomRole(rm.id,d.staffRole);if(!s)return 0.5;
+  let m=1;s.traits.forEach(t=>{if(t.revMult)m*=t.revMult;});
+  if(s.energy<40)m*=0.9;
+  (d.supportRoles||[]).forEach(role=>{if(!getAssignedStaffForRoomRole(rm.id,role))m*=0.9;});
+  const coverage=coverageStatus();
+  if(rm.type!=='head_office')m*=Math.max(0.75,1-(coverage.nurseShort*0.04));
+  if(isCnaCoverageRoom(rm))m*=Math.max(0.8,1-(coverage.cnaShort*0.03));
+  return m;
+}
+function getScoreBonus(rm){
+  const s=getStaffForRoom(rm.id);if(!s)return 0;
+  let b=0;s.traits.forEach(t=>{if(t.scoreMult)b+=t.scoreMult;});return b;
+}
+
+function openStaff(){renderStaffModal();document.getElementById('staffmodal').classList.add('open');}
+function closeStaff(){document.getElementById('staffmodal').classList.remove('open');}
+
+function renderStaffModal(){
+  const availableRoles=Object.entries(ROLES).filter(([k])=>isRoleUnlocked(k));
+  if(!isRoleUnlocked(currentTab))currentTab=availableRoles[0]?.[0]||'clerical';
+  const unhiredCount=staffPool.filter(s=>!s.hired&&s.role===currentTab&&visibleByShift(s)).length;
+  const tabs=document.getElementById('staff-tabs');
+  tabs.innerHTML=availableRoles.map(([k,v])=>{
+    const count=staff.filter(s=>s.hired&&s.role===k&&visibleByShift(s)).length;
+    const avail=staffPool.filter(s=>!s.hired&&s.role===k&&visibleByShift(s)).length;
+    const active=k===currentTab?'background:var(--color-background-info);color:var(--color-text-info);border-color:var(--color-border-info);':'';
+    return`<button onclick="switchTab('${k}')" style="font-size:10px;padding:3px 8px;border:0.5px solid var(--color-border-secondary);border-radius:4px;background:transparent;cursor:pointer;color:var(--color-text-secondary);${active}">${v.label} <span style="color:var(--color-text-success)">${count} hired</span> · <span style="color:var(--color-text-secondary)">${avail} avail</span></button>`;
+  }).join('');
+  document.getElementById('staff-actions').innerHTML=`<button onclick="setStaffShiftFilter('day')" ${staffShiftFilter==='day'?'style="background:var(--color-background-info);border-color:var(--color-border-info);color:var(--color-text-info)"':''}>Day Staff</button><button onclick="setStaffShiftFilter('night')" ${staffShiftFilter==='night'?'style="background:var(--color-background-info);border-color:var(--color-border-info);color:var(--color-text-info)"':''}>Night Staff</button><button onclick="setStaffShiftFilter('all')" ${staffShiftFilter==='all'?'style="background:var(--color-background-info);border-color:var(--color-border-info);color:var(--color-text-info)"':''}>All</button><button onclick="rerollStaffPool()" ${money<STAFF_REROLL_COST?'disabled':''}>Reroll ${ROLES[currentTab].label} ($${STAFF_REROLL_COST})</button><button onclick="rerollStaffPool(true)" ${money<STAFF_REROLL_COST*2?'disabled':''}>Reroll All Unhired ($${STAFF_REROLL_COST*2})</button>`;
+  const pool=staffPool.filter(s=>s.role===currentTab&&visibleByShift(s));
+  const hired=staff.filter(s=>s.hired&&s.role===currentTab&&visibleByShift(s));
+  const all=[...hired,...pool.filter(s=>!s.hired)];
+  const roomOptions=rooms.filter(r=>roomSupportsRole(r,currentTab));
+  document.getElementById('staff-content').innerHTML=all.map(s=>{
+    const options=roomOptions.map(r=>{
+      const def=RDEFS[r.type];
+      const taken=staff.find(st=>st.hired&&st.assignedRoom===r.id&&st.role===s.role&&st.shift===s.shift&&st.id!==s.id);
+      return`<option value="${r.id}" ${s.assignedRoom===r.id?'selected':''} ${taken?'disabled':''}>${def.name}${taken?' ('+s.shift+' taken)':''}</option>`;
+    }).join('');
+    const assignmentUi=currentTab==='janitor'
+      ?`<div class="traits"><span class="trait neutral">${s.shift} shift</span><span class="trait neutral">Facility duty</span><span class="trait neutral">Energy ${Math.round(s.energy)}</span></div>`
+      :roleUsesGlobalCoverage(currentTab)
+      ?`<div class="traits"><span class="trait neutral">${s.shift} shift</span><span class="trait neutral">Hospital-wide coverage</span><span class="trait neutral">Energy ${Math.round(s.energy)}</span></div>`
+      :`<select class="assign-sel" onchange="assignRoom(${s.id},this.value)"><option value="">Unassigned</option>${options}</select>`;
+    return`<div class="scard ${s.hired?'hired':''}">
+      <div class="sname">${s.name}</div>
+      <div class="srole">${ROLES[s.role].label}</div>
+      <div class="ssalary">$${s.salary.toLocaleString()}/mo</div>
+      <div class="traits"><span class="trait neutral">${s.shift} shift</span>${s.traits.map(t=>`<span class="trait ${t.type}">${t.label}</span>`).join('')}</div>
+      ${s.hired
+        ?`${assignmentUi}<button class="fire-btn" onclick="fireStaff(${s.id})">Fire</button>`
+        :`<button class="hire-btn" onclick="hireStaff(${s.id})">Hire — $${s.salary.toLocaleString()}/mo</button>`
+      }
+    </div>`;
+  }).join('');
+  document.getElementById('modal-title').textContent=`Staff — ${ROLES[currentTab].label}`;
+  const shiftLabel=staffShiftFilter==='all'?'All Shifts':`${staffShiftFilter[0].toUpperCase()+staffShiftFilter.slice(1)} Shift`;
+  document.getElementById('modal-title').textContent=`Staff - ${ROLES[currentTab].label} (${shiftLabel})`;
+}
+
+function switchTab(role){currentTab=role;renderStaffModal();}
+
+function rerollStaffPool(allRoles=false){
+  const cost=allRoles?STAFF_REROLL_COST*2:STAFF_REROLL_COST;
+  if(money<cost){addLog('Not enough money to reroll staff candidates.','b');return;}
+  const targetRoles=allRoles?Object.keys(ROLES).filter(role=>isRoleUnlocked(role)):[currentTab];
+  const targetShifts=allRoles||staffShiftFilter==='all'?SHIFTS:[staffShiftFilter];
+  money-=cost;
+  staffPool=staffPool.filter(s=>s.hired||!targetRoles.includes(s.role)||!targetShifts.includes(s.shift));
+  targetRoles.forEach(role=>{targetShifts.forEach(shift=>{for(let i=0;i<2;i++)staffPool.push(genStaffMember(role,shift));});});
+  addLog(allRoles?`Staff agency delivered a full new candidate wave. -$${cost}`:`Rerolled ${ROLES[currentTab].label} candidates. -$${cost}`,'w');
+  updateUI();renderStaffModal();
+}
+
+function hireStaff(id){
+  const s=staffPool.find(p=>p.id===id);if(!s||s.hired)return;
+  s.hired=true;staff.push(s);
+  dailyStats.rolesHired[s.role]=(dailyStats.rolesHired[s.role]||0)+1;
+  staffPool.push(genStaffMember(s.role,s.shift));
+  addLog(`Hired ${s.name} (${ROLES[s.role].label}, ${s.shift} shift) at $${s.salary.toLocaleString()}/mo`,'g');
+  updateUI();renderStaffModal();
+}
+
+function fireStaff(id){
+  const s=staff.find(p=>p.id===id);if(!s)return;
+  s.hired=false;s.assignedRoom=null;
+  staff=staff.filter(p=>p.id!==id);
+  const idx=staffPool.findIndex(p=>p.id===id);
+  if(idx>=0)staffPool.splice(idx,1);
+  staffPool.push(genStaffMember(s.role,s.shift));
+  addLog(`Fired ${s.name}.`,'b');
+  updateUI();renderStaffModal();
+}
+
+function assignRoom(sid,roomId){
+  const s=staff.find(p=>p.id===sid);if(!s)return;
+  if(s.role==='janitor'||roleUsesGlobalCoverage(s.role)){renderStaffModal();return;}
+  const normalizedRoomId=roomId?Number(roomId):null;
+  s.assignedRoom=normalizedRoomId;
+  if(normalizedRoomId)addLog(`${s.name} assigned to ${RDEFS[rooms.find(r=>r.id===normalizedRoomId)?.type]?.name||'room'} (${s.shift} shift)`,'');
+  renderStaffModal();updateUI();
+}
+
+function sel(t){
+  if(!isToolUnlocked(t)){
+    document.getElementById('hint').textContent=getMilestoneForTool(t)?.desc||`${RDEFS[t]?.name||'This room'} is still locked.`;
+    return;
+  }
+  selTool=t;
+  document.querySelectorAll('.rb,.dockbtn').forEach(b=>b.classList.remove('sel'));
+  document.querySelectorAll(`[data-tool="${t}"]`).forEach(b=>b.classList.add('sel'));
+  const hints={
+    corridor:'Click and drag to paint corridor tiles.',
+    demolish:'Click a tile or room to remove it.',
+    ...Object.fromEntries(Object.entries(RDEFS).map(([k,v])=>[k,`Placing ${v.name} ($${v.cost}) — needs corridor + ${ROLES[v.staffRole].label}.`]))
+  };
+  Object.keys(RDEFS).forEach(k=>{
+    hints[k]=`Placing ${RDEFS[k].name} ($${RDEFS[k].cost}) - needs corridor + ${getRoomRequirementText(k).replace('Needs: ','')}.`;
+  });
+  document.getElementById('hint').textContent=hints[t]||'';
+}
+
+function gridXY(e){const r=cv.getBoundingClientRect();return{x:Math.floor((e.clientX-r.left)/T),y:Math.floor((e.clientY-r.top)/T)};}
+function inBounds(x,y){return x>=0&&y>=0&&x<COLS&&y<ROWS;}
+function tileOccupied(x,y){if(grid[y]&&grid[y][x])return true;for(const rm of rooms){if(x>=rm.c&&x<rm.c+rm.w&&y>=rm.r&&y<rm.r+rm.h)return true;}return false;}
+function roomAt(x,y){return rooms.find(r=>x>=r.c&&x<r.c+r.w&&y>=r.r&&y<r.r+r.h)||null;}
+function corridorAdj(rc,rr2,rw,rh){
+  for(let x=rc;x<rc+rw;x++){if(inBounds(x,rr2-1)&&grid[rr2-1][x]==='corridor')return true;if(inBounds(x,rr2+rh)&&grid[rr2+rh][x]==='corridor')return true;}
+  for(let y=rr2;y<rr2+rh;y++){if(inBounds(rc-1,y)&&grid[y][rc-1]==='corridor')return true;if(inBounds(rc+rw,y)&&grid[y][rc+rw]==='corridor')return true;}
+  return false;
+}
+function isConn(rm){return corridorAdj(rm.c,rm.r,rm.w,rm.h);}
+
+function paintCorridor(x,y){
+  if(!inBounds(x,y)||tileOccupied(x,y))return;
+  if(money<100){addLog('Not enough money!','b');return;}
+  grid[y][x]='corridor';money-=100;updateUI();
+}
+
+cv.addEventListener('mousedown',e=>{
+  if(e.button===2)return;
+  const{x,y}=gridXY(e);dragging=true;
+  if(selTool==='corridor')paintCorridor(x,y);
+  else if(selTool==='demolish')demolishAt(x,y);
+  else if(selTool&&RDEFS[selTool])placeRoom(x,y);
+});
+cv.addEventListener('mousemove',e=>{
+  const{x,y}=gridXY(e);hover={x,y};
+  if(dragging&&selTool==='corridor')paintCorridor(x,y);
+  showTT(e,x,y);render();
+});
+cv.addEventListener('mouseup',()=>dragging=false);
+cv.addEventListener('mouseleave',()=>{dragging=false;hover={x:-1,y:-1};document.getElementById('tt').style.display='none';render();});
+cv.addEventListener('contextmenu',e=>{e.preventDefault();selTool=null;document.querySelectorAll('.rb,.dockbtn').forEach(b=>b.classList.remove('sel'));});
+
+function showTT(e,x,y){
+  const tt=document.getElementById('tt');
+  if(selTool)return void(tt.style.display='none');
+  const rm=roomAt(x,y);
+  if(rm){
+    const d=RDEFS[rm.type];
+    const s=getStaffForRoom(rm.id);
+    const inUse=patients.filter(p=>p.roomId===rm.id).length;
+    const conn=isConn(rm);
+    const receptionLinked=rm.type!=='waiting_room'||waitingRoomConnectedToReception(rm);
+    let html=`<b>${d.name}</b><br><span class="ts">${inUse}/${d.cap} · ${conn?'Connected':'No corridor!'}</span>`;
+    if(rm.type==='waiting_room')html+=`<br><span class="ts">${receptionLinked?'Linked to reception':'Needs reception connection'}</span>`;
+    else if(s){html+=`<br><span style="color:var(--color-text-success)">${s.name}</span>`;s.traits.forEach(t=>html+=`<br><span class="ts">${t.label}</span>`);}
+    else html+=`<br><span style="color:var(--color-text-danger)">No ${ROLES[d.staffRole].label}! Half speed.</span>`;
+    const wr=document.getElementById('cw').getBoundingClientRect();
+    tt.style.left=(e.clientX-wr.left+12)+'px';tt.style.top=(e.clientY-wr.top-10)+'px';
+    tt.innerHTML=html;tt.style.display='block';
+  } else if(inBounds(x,y)&&grid[y][x]==='corridor'){
+    tt.innerHTML='<b>Corridor</b><br><span class="ts">Patient walkway</span>';
+    const wr=document.getElementById('cw').getBoundingClientRect();
+    tt.style.left=(e.clientX-wr.left+12)+'px';tt.style.top=(e.clientY-wr.top-10)+'px';
+    tt.style.display='block';
+  } else tt.style.display='none';
+}
+
+function placeRoom(cx,cy){
+  if(!isToolUnlocked(selTool)){addLog(`${RDEFS[selTool]?.name||'That room'} is still locked.`,'w');return;}
+  const d=RDEFS[selTool];
+  const hasCredit=(freeBuildCredits[selTool]||0)>0;
+  if(!hasCredit&&money<d.cost){addLog('Not enough money!','b');return;}
+  const pc=Math.max(0,Math.min(cx,COLS-d.w)),pr=Math.max(0,Math.min(cy,ROWS-d.h));
+  for(let rr2=pr;rr2<pr+d.h;rr2++)for(let cc=pc;cc<pc+d.w;cc++)if(tileOccupied(cc,rr2)){addLog('Space occupied.','b');return;}
+  if(!corridorAdj(pc,pr,d.w,d.h)){addLog(`${d.name} needs adjacent corridor.`,'b');return;}
+  if(selTool==='waiting_room'&&!roomAdjacentToType(pc,pr,d.w,d.h,'reception')){addLog('Waiting Room needs to touch a reception desk.','b');return;}
+  if(hasCredit){
+    freeBuildCredits[selTool]--;
+    addLog(`Built ${d.name} with a donor room credit.`,'g');
+  }else{
+    money-=d.cost;
+    addLog(`Built ${d.name}.`,'g');
+  }
+  dailyStats.roomsBuilt++;
+  rooms.push({id:Date.now()+Math.random(),type:selTool,r:pr,c:pc,w:d.w,h:d.h});
+  updateUI();render();
+}
+
+function demolishAt(x,y){
+  const rm=roomAt(x,y);
+  if(rm){
+    const refund=Math.floor(RDEFS[rm.type].cost*.5);
+    money+=refund;patients=patients.filter(p=>p.roomId!==rm.id);
+    staff.filter(s=>s.assignedRoom===rm.id).forEach(s=>s.assignedRoom=null);
+    rooms=rooms.filter(r=>r.id!==rm.id);
+    addLog(`Demolished ${RDEFS[rm.type].name}. +$${refund}`,'b');updateUI();return;
+  }
+  if(inBounds(x,y)&&grid[y][x]==='corridor'){grid[y][x]=null;money+=50;addLog('Removed corridor. +$50','b');updateUI();}
+}
+
+function addLog(msg,type=''){
+  logs.unshift({msg,type,d:day});if(logs.length>60)logs.pop();
+  document.getElementById('log').innerHTML=logs.slice(0,20).map(l=>`<div class="li ${l.type}">Day ${l.d}: ${l.msg}</div>`).join('');
+}
+function serializeGame(){
+  return{
+    version:1,
+    savedAt:Date.now(),
+    money,day,score,totalTreated,monthlyInc,incAccum,reputation,cleanliness,
+    grid,rooms,patients,staff,staffPool,logs,
+    selTool,gameTime,speed,paused,patId,staffId,
+    currentTab,debtDays,lowRepDays,dirtyDays,gameOver,loseReason,
+    unlockedTools:[...unlockedTools],
+    unlockedRoles:[...unlockedRoles],
+    unlockedMilestones:[...unlockedMilestones],
+    researchedTech:[...researchedTech],
+    unlockedFeatures:[...unlockedFeatures],
+    activeResearch,
+    dispatchJobs,dispatchJobId,
+    hasStarted,gradeIndex,gradeNote,
+    monthRepAccum,monthCleanAccum,monthWaitAccum,monthSamples,monthDebtDays,monthHighWaitDays,
+    contractOffer,activeContract,lastContractId,freeBuildCredits,
+    dailyGoal,dailyStats,staffShiftFilter
+  };
+}
+function saveGame(){
+  try{
+    localStorage.setItem(SAVE_KEY,JSON.stringify(serializeGame()));
+    document.getElementById('hint').textContent=`Game saved to local storage on day ${day}.`;
+    addLog('Game saved to local storage.','g');
+  }catch(err){
+    console.error(err);
+    document.getElementById('hint').textContent='Save failed. Local storage may be unavailable.';
+    addLog('Save failed. Local storage may be unavailable.','b');
+  }
+}
+function loadGame(){
+  try{
+    const raw=localStorage.getItem(SAVE_KEY);
+    if(!raw){
+      document.getElementById('hint').textContent='No saved hospital was found in local storage.';
+      if(logs.length)addLog('No saved hospital was found in local storage.','w');
+      return;
+    }
+    const data=JSON.parse(raw);
+    money=data.money??50000;
+    day=data.day??1;
+    score=data.score??0;
+    totalTreated=data.totalTreated??0;
+    monthlyInc=data.monthlyInc??0;
+    incAccum=data.incAccum??0;
+    reputation=data.reputation??70;
+    cleanliness=data.cleanliness??78;
+    grid=Array.isArray(data.grid)?data.grid:Array.from({length:ROWS},()=>Array(COLS).fill(null));
+    rooms=Array.isArray(data.rooms)?data.rooms:[];
+    patients=Array.isArray(data.patients)?data.patients:[];
+    staff=Array.isArray(data.staff)?data.staff:[];
+    staffPool=Array.isArray(data.staffPool)?data.staffPool:[];
+    logs=Array.isArray(data.logs)?data.logs.slice(0,60):[];
+    selTool=data.selTool??null;
+    gameTime=data.gameTime??0;
+    speed=data.speed??1;
+    paused=data.paused??true;
+    patId=data.patId??(patients.reduce((max,p)=>Math.max(max,p.id||0),0)+1);
+    staffId=data.staffId??Math.max(
+      staff.reduce((max,s)=>Math.max(max,s.id||0),0),
+      staffPool.reduce((max,s)=>Math.max(max,s.id||0),0)
+    )+1;
+    currentTab=data.currentTab??'clerical';
+    debtDays=data.debtDays??0;
+    lowRepDays=data.lowRepDays??0;
+    dirtyDays=data.dirtyDays??0;
+    gameOver=!!data.gameOver;
+    loseReason=data.loseReason??'';
+    unlockedTools=new Set(data.unlockedTools||STARTING_TOOLS);
+    unlockedRoles=new Set(data.unlockedRoles||STARTING_ROLES);
+    unlockedMilestones=new Set(data.unlockedMilestones||[]);
+    researchedTech=new Set(data.researchedTech||[]);
+    unlockedFeatures=new Set(data.unlockedFeatures||[]);
+    activeResearch=data.activeResearch??null;
+    dispatchJobs=Array.isArray(data.dispatchJobs)?data.dispatchJobs:[];
+    dispatchJobId=data.dispatchJobId??(dispatchJobs.reduce((max,job)=>Math.max(max,job.id||0),0)+1);
+    hasStarted=data.hasStarted??true;
+    gradeIndex=data.gradeIndex??0;
+    gradeNote=data.gradeNote??'Monthly inspectors are fully satisfied';
+    monthRepAccum=data.monthRepAccum??0;
+    monthCleanAccum=data.monthCleanAccum??0;
+    monthWaitAccum=data.monthWaitAccum??0;
+    monthSamples=data.monthSamples??0;
+    monthDebtDays=data.monthDebtDays??0;
+    monthHighWaitDays=data.monthHighWaitDays??0;
+    contractOffer=data.contractOffer??null;
+    activeContract=data.activeContract??null;
+    lastContractId=data.lastContractId??null;
+    freeBuildCredits=data.freeBuildCredits||{gp:0};
+    dailyGoal=data.dailyGoal??null;
+    dailyStats=data.dailyStats||{treated:0,gpVisits:0,roomsBuilt:0,rolesHired:{},cleanDays:0};
+    staffShiftFilter=data.staffShiftFilter??'day';
+    hover={x:-1,y:-1};
+    dragging=false;
+    loseReason=gameOver?loseReason:'';
+    document.getElementById('log').innerHTML=logs.slice(0,20).map(l=>`<div class="li ${l.type}">Day ${l.d}: ${l.msg}</div>`).join('');
+    document.getElementById('staffmodal').classList.remove('open');
+    document.getElementById('tt').style.display='none';
+    setMenuVisibility(false);
+    document.getElementById('gameover').classList.toggle('open',gameOver);
+    if(gameOver){
+      document.getElementById('gameovermsg').textContent=loseReason;
+      document.getElementById('go-days').textContent=`Closed on day ${day}`;
+      document.getElementById('go-treated').textContent=`Patients treated: ${totalTreated}`;
+      document.getElementById('go-score').textContent=`Final score: ${Math.floor(score)}`;
+    }
+    document.getElementById('hint').textContent=`Loaded hospital from day ${day}.`;
+    document.querySelectorAll('.sb').forEach((b,i)=>b.classList.toggle('on',[1,2,4][i]===speed));
+    document.getElementById('pbtn').textContent=paused?'Play':'Pause';
+    updateUI();
+    render();
+    addLog('Saved hospital loaded from local storage.','g');
+  }catch(err){
+    console.error(err);
+    document.getElementById('hint').textContent='Load failed. The save data may be corrupted.';
+    if(logs.length)addLog('Load failed. The save data may be corrupted.','b');
+  }
+}
+
+function getReputationStatus(){
+  if(reputation>=80)return 'Excellent public trust';
+  if(reputation>=60)return 'Stable standing';
+  if(reputation>=40)return 'Concerns rising';
+  if(reputation>=20)return 'Patients are losing confidence';
+  return 'Closure risk is severe';
+}
+
+function getCleanlinessStatus(){
+  if(cleanliness>=85)return 'Facility is running clean';
+  if(cleanliness>=65)return 'Acceptable, but keep janitors staffed';
+  if(cleanliness>=40)return 'Dirty floors and full bins are hurting trust';
+  return 'Unsafe conditions are damaging the hospital';
+}
+
+function getHospitalGrade(){return HOSPITAL_GRADES[gradeIndex];}
+
+function reviewHospitalGrade(){
+  const avgRep=monthSamples?monthRepAccum/monthSamples:reputation;
+  const avgClean=monthSamples?monthCleanAccum/monthSamples:cleanliness;
+  const avgWait=monthSamples?monthWaitAccum/monthSamples:0;
+  const problems=[];
+
+  if(avgRep<55)problems.push('low public confidence');
+  if(avgClean<62)problems.push('poor sanitation standards');
+  if(monthDebtDays>=5)problems.push('too many days in debt');
+  if(monthHighWaitDays>=8||avgWait>8)problems.push('long patient waits');
+
+  if(problems.length){
+    if(gradeIndex<HOSPITAL_GRADES.length-1)gradeIndex++;
+    gradeNote=`Unsatisfactory month: ${problems.join(', ')}.`;
+    addLog(`Monthly inspection: grade fell to ${getHospitalGrade()} due to ${problems.join(', ')}.`,'b');
+  }else{
+    gradeNote='Monthly inspectors are satisfied with current standards.';
+    addLog(`Monthly inspection: grade held at ${getHospitalGrade()}.`,'g');
+  }
+
+  monthRepAccum=0;monthCleanAccum=0;monthWaitAccum=0;monthSamples=0;monthDebtDays=0;monthHighWaitDays=0;
+}
+
+function wageBill(){return staff.filter(s=>s.hired).reduce((a,s)=>a+s.salary,0);}
+
+function updateUI(){
+  applyMilestoneUnlocks();
+  const coverage=coverageStatus();
+  const waitingCount=waitingPatientsCount();
+  document.getElementById('smoney').textContent=money.toLocaleString();
+  document.getElementById('sday').textContent=day;
+  document.getElementById('sshift').textContent=currentShiftLabel();
+  document.getElementById('sscore').textContent=Math.floor(score);
+  document.getElementById('sgrade').textContent=getHospitalGrade();
+  document.getElementById('srep').textContent=Math.round(reputation);
+  document.getElementById('sclean').textContent=Math.round(cleanliness);
+  document.getElementById('spat').textContent=patients.length;
+  document.getElementById('swait').textContent=waitingCount;
+  document.getElementById('rmoney').textContent='$'+money.toLocaleString();
+  document.getElementById('rgrade').textContent=getHospitalGrade();
+  document.getElementById('rgradewarn').textContent=gradeNote;
+  document.getElementById('rrep').textContent=Math.round(reputation);
+  document.getElementById('rrepwarn').textContent=getReputationStatus();
+  document.getElementById('rclean').textContent=Math.round(cleanliness)+'%';
+  document.getElementById('rcleanwarn').textContent=getCleanlinessStatus();
+  document.getElementById('rwaiting').textContent=waitingCount;
+  document.getElementById('rwaitingwarn').textContent=getWaitingStatus(waitingCount);
+  document.getElementById('rnursecov').textContent=`${coverage.nurseAssigned} / ${coverage.nurseNeeded}`;
+  document.getElementById('rnursecovwarn').textContent=getCoverageWarning(coverage.nurseAssigned,coverage.nurseNeeded,'Nurse');
+  document.getElementById('rcnacov').textContent=`${coverage.cnaAssigned} / ${coverage.cnaNeeded}`;
+  document.getElementById('rcnacovwarn').textContent=getCoverageWarning(coverage.cnaAssigned,coverage.cnaNeeded,'CNA');
+  document.getElementById('rincome').textContent='$'+monthlyInc.toLocaleString();
+  document.getElementById('rwages').textContent='$'+wageBill().toLocaleString();
+  document.getElementById('rdebt').textContent=`${debtDays} day${debtDays===1?'':'s'}`;
+  document.getElementById('rtreated').textContent=totalTreated;
+  document.getElementById('sstaff').textContent=staff.filter(s=>s.hired).length;
+  renderDailyGoal();
+  renderDispatchJobs();
+  renderResearch();
+  renderContracts();
+  updateUnlockButtons();
+  renderMilestones();
+  if(gameOver)document.getElementById('hint').textContent=loseReason;
+}
+
+function spawnPatient(){
+  if(gameOver)return;
+  const connRec=rooms.filter(r=>r.type==='reception'&&isConn(r));
+  if(!connRec.length)return;
+  if(Math.random()>clamp(reputation/100,0.12,0.95))return;
+  const urg=Math.random()<0.2?'urgent':Math.random()<0.5?'moderate':'minor';
+  const patient={id:patId++,urg,needs:buildNeeds(urg),step:0,roomId:null,waitTime:0,state:'waiting',tLeft:0,contractTag:null,displayLabel:''};
+  if(activeContract?.type==='celebrity'&&!activeContract.spawned){
+    patient.contractTag='celebrity';
+    patient.displayLabel='Celebrity case';
+    patient.urg='moderate';
+    patient.needs=['reception','gp','pharmacy'].filter(type=>isToolUnlocked(type));
+    activeContract.spawned=true;
+  }else if(activeContract?.type==='free_cases'&&Math.random()<0.38){
+    patient.contractTag='free_case';
+    patient.displayLabel='Pro bono case';
+  }
+  patients.push(patient);
+}
+
+function buildNeeds(urg){
+  const base=urg==='urgent'
+    ?['reception','er','ward','surgery']
+    :urg==='moderate'
+      ?['reception','gp','xray','pharmacy']
+      :['reception','gp','pharmacy'];
+  const filtered=base.filter((type,idx)=>(idx===0||Math.random()>.4)&&isToolUnlocked(type));
+  if(filtered.length)return filtered;
+  const fallback=['reception','gp','pharmacy'].filter(type=>isToolUnlocked(type));
+  return fallback.length?fallback:['reception'];
+}
+
+function findRoom(type){
+  const matching=rooms.filter(r=>r.type===type&&isConn(r));
+  for(const rm of matching){
+    const n=patients.filter(p=>p.roomId===rm.id&&p.state==='treating').length;
+    const s=getStaffForRoom(rm.id);
+    const cap=s&&s.traits.find(t=>t.capReduce)?Math.ceil(RDEFS[rm.type].cap*(1-s.traits.find(t=>t.capReduce).capReduce)):RDEFS[rm.type].cap;
+    if(n<cap)return rm;
+  }
+  return null;
+}
+
+let tickAcc=0;
+function updateDailyHospitalState(){
+  const janitors=getJanitors();
+  const activeShift=currentShift();
+  generateDispatchJobs(activeShift);
+  progressDispatchJobs(activeShift);
+  const coverage=coverageStatus(activeShift);
+  const waitingCount=waitingPatientsCount();
+  const waitOverflow=Math.max(0,waitingCount-effectiveWaitingCapacity());
+    const activeMedical=staff.filter(s=>s.hired&&s.shift===activeShift&&s.role!=='janitor'&&(s.assignedRoom||s.role==='clerical'||roleUsesGlobalCoverage(s.role))).length;
+  const workload=Math.max(0,rooms.length*0.65+patients.length*0.45);
+  const janitorPower=janitors.filter(j=>j.shift===activeShift).reduce((sum,j)=>sum+(j.energy>=40?1:0.6),0);
+  const sterileBonus=hasFeature('sterile_workflow')?1.2:0;
+  cleanliness=clamp(cleanliness-(1.6+workload*0.22)+(janitorPower*3.8)+sterileBonus-(coverage.nurseShort*0.7)-(coverage.cnaShort*0.4)-(waitOverflow*0.45),0,100);
+
+  staff.forEach(s=>{
+      const working=s.shift===activeShift&&(s.role==='janitor'?rooms.length>0:!!s.assignedRoom||s.role==='clerical'||roleUsesGlobalCoverage(s.role));
+    const strain=s.role==='janitor'?Math.max(0,rooms.length/5-janitors.length*0.4):Math.max(0,patients.length/6);
+    s.energy=clamp(s.energy+(working?-(6+strain*2.2):8),0,100);
+    if(s.energy<25&&!s.burnoutLogged){
+      addLog(`${s.name} is burning out. Performance is dropping.`,'w');
+      s.burnoutLogged=true;
+    } else if(s.energy>45&&s.burnoutLogged){
+      s.burnoutLogged=false;
+    }
+  });
+
+  let repDelta=0;
+  if(cleanliness<35){repDelta-=6;dirtyDays++;}
+  else if(cleanliness<55){repDelta-=3;dirtyDays++;}
+  else if(cleanliness>85&&janitors.length>0){repDelta+=1;dirtyDays=0;}
+  else dirtyDays=0;
+
+  const avgWait=patients.length?patients.reduce((sum,p)=>sum+p.waitTime,0)/patients.length:0;
+  monthRepAccum+=reputation;
+  monthCleanAccum+=cleanliness;
+  monthWaitAccum+=avgWait;
+  monthSamples++;
+  if(avgWait>8)monthHighWaitDays++;
+  if(money<0)monthDebtDays++;
+  if(avgWait>8)repDelta-=2;
+  if(avgWait>14)repDelta-=2;
+  if(waitOverflow>0)repDelta-=Math.min(4,waitOverflow);
+  if(activeMedical===0&&rooms.length>0)repDelta-=4;
+  if(coverage.nurseShort>0)repDelta-=coverage.nurseShort;
+  if(coverage.cnaShort>0)repDelta-=Math.ceil(coverage.cnaShort*0.5);
+  if(totalTreated>0&&cleanliness>70&&avgWait<6)repDelta+=1;
+
+  reputation=clamp(reputation+repDelta,0,100);
+  if(reputation<=10)lowRepDays++;
+  else if(reputation>=20)lowRepDays=0;
+
+  if(money<0)debtDays++;
+  else debtDays=0;
+
+  if(cleanliness<40&&janitors.length===0&&day%2===0)addLog('The facility is getting dirty. Hire janitors before patients lose confidence.','w');
+  if(waitOverflow>0&&day%2===0)addLog(`Waiting room overflow: ${waitOverflow} patients are queued beyond available seating. Build more waiting space.`, 'w');
+  if((coverage.nurseShort>0||coverage.cnaShort>0)&&day%2===0)addLog(`Shift staffing gap: ${coverage.nurseShort}/${coverage.nurseNeeded} nurse shortage and ${coverage.cnaShort}/${coverage.cnaNeeded} CNA shortage on ${currentShiftLabel().toLowerCase()} shift.`,'w');
+  if(debtDays===5)addLog('Budget crisis: the hospital has been in debt for 5 days. Turn it around soon.','b');
+  if(lowRepDays===3)addLog('Reputation is collapsing. Patients may stop coming entirely.','b');
+}
+
+function endGame(reason){
+  if(gameOver)return;
+  gameOver=true;
+  paused=true;
+  loseReason=reason;
+  document.getElementById('gameovermsg').textContent=reason;
+  document.getElementById('go-days').textContent=`Closed on day ${day}`;
+  document.getElementById('go-treated').textContent=`Patients treated: ${totalTreated}`;
+  document.getElementById('go-score').textContent=`Final score: ${Math.floor(score)}`;
+  document.getElementById('gameover').classList.add('open');
+  addLog(reason,'b');
+  updateUI();
+}
+
+function resetGameState(showTitle=false){
+  money=50000;day=1;score=0;totalTreated=0;monthlyInc=0;incAccum=0;reputation=70;cleanliness=78;
+  grid=Array.from({length:ROWS},()=>Array(COLS).fill(null));
+  rooms=[];patients=[];staff=[];logs=[];
+  selTool=null;gameTime=0;speed=1;paused=true;patId=0;staffId=0;
+  hover={x:-1,y:-1};dragging=false;
+  staffPool=[];currentTab='clerical';
+  debtDays=0;lowRepDays=0;dirtyDays=0;gameOver=false;loseReason='';
+  unlockedTools=new Set(STARTING_TOOLS);unlockedRoles=new Set(STARTING_ROLES);unlockedMilestones=new Set();
+  hasStarted=!showTitle;
+  gradeIndex=0;gradeNote='Monthly inspectors are fully satisfied';
+  monthRepAccum=0;monthCleanAccum=0;monthWaitAccum=0;monthSamples=0;monthDebtDays=0;monthHighWaitDays=0;
+  contractOffer=null;activeContract=null;lastContractId=null;freeBuildCredits={gp:0};
+  researchedTech=new Set();unlockedFeatures=new Set();activeResearch=null;
+  dispatchJobs=[];dispatchJobId=0;
+  resetDailyStats();
+  makeDailyGoal();
+  tickAcc=0;last=null;
+  document.getElementById('log').innerHTML='';
+  document.getElementById('hint').textContent='Draw corridors first. Then place rooms. Open "+ Staff" to hire â€” unstaffed rooms run at half speed.';
+  document.getElementById('hint').textContent=showTitle?'Build a layout, hire staff, then press Start Game when you are ready.':'Run is paused. Build, hire, and press play or a speed button when you want the hospital to open.';
+  document.getElementById('staffmodal').classList.remove('open');
+  document.getElementById('tt').style.display='none';
+  document.querySelectorAll('.sb').forEach((b,i)=>b.classList.toggle('on',i===0));
+  document.getElementById('pbtn').textContent=paused?'▶':'⏸';
+  document.getElementById('pbtn').textContent=paused?'â–¶':'â¸';
+  document.getElementById('pbtn').textContent=paused?'Play':'Pause';
+  generatePool();
+  makeContractOffer();
+  setMenuVisibility(showTitle);
+  addLog(showTitle?'Hospital ready. Press Start Game when you are ready to open the doors.':'Hospital founded. Draw corridors, build rooms, then hire staff!','g');
+  updateUI();
+  render();
+}
+
+function startGame(){resetGameState(false);}
+function restartGame(){resetGameState(false);}
+function quitToTitle(){resetGameState(true);}
+
+function checkLoseConditions(){
+  if(reputation<=0)return endGame('Public trust hit zero. The hospital lost all community support and was forced to close.');
+  if(debtDays>=10)return endGame('Budget crisis: the hospital stayed in debt too long and lenders forced a shutdown.');
+  if(lowRepDays>=5)return endGame('Public trust collapsed. With reputation gone, the hospital could not remain open.');
+  if(dirtyDays>=6&&cleanliness<35)return endGame('Unsafe facility conditions triggered closure after repeated sanitation failures.');
+}
+
+function tick(dt){
+  if(paused||gameOver)return;
+  tickAcc+=dt*speed;
+  while(tickAcc>=800){
+    tickAcc-=800;gameTime++;
+    if(gameTime%10===0){
+      resolveDailyGoal();
+      day++;
+      resetDailyStats();
+      makeDailyGoal();
+      progressResearch();
+      updateDailyHospitalState();
+      if(day%30===0){
+        reviewHospitalGrade();
+        const wages=wageBill();
+        if(wages>0){money-=wages;addLog(`Monthly wages paid: -$${wages.toLocaleString()}`,'w');}
+        staffPool=staffPool.filter(s=>!s.hired);
+        Object.keys(ROLES).forEach(role=>{SHIFTS.forEach(shift=>{while(staffPool.filter(s=>s.role===role&&s.shift===shift).length<2)staffPool.push(genStaffMember(role,shift));});});
+        addLog('New staff available in the hiring pool.','');
+      }
+      checkLoseConditions();
+      updateUI();
+    }
+    if(gameTime%7===0&&Math.random()<clamp(0.3+(reputation/140),0.18,0.92))spawnPatient();
+    if(gameTime%2===0)updatePatients();
+    if(gameTime%25===0)flushIncome();
+    if(gameTime%50===0)randomEvent();
+  }
+  render();
+}
+
+function updatePatients(){
+  let waiting=0;
+  let repChanged=false;
+  for(const p of patients){
+    if(p.state==='waiting'){
+      waiting++;p.waitTime++;
+      if(p.waitTime===getEffectiveLongWaitThreshold()){
+        reputation=clamp(reputation-2,0,100);
+        repChanged=true;
+        addLog('Patients are unhappy about long waits. Reputation -2.','w');
+      }
+      if(p.waitTime>=getEffectiveUntreatedLeaveThreshold()){
+        p.state='leaving';
+        reputation=clamp(reputation-8,0,100);
+        repChanged=true;
+        addLog('A patient left untreated after waiting too long. Reputation -8.','b');
+        continue;
+      }
+      const need=p.needs[p.step];if(!need){p.state='leaving';continue;}
+      const rm=findRoom(need);
+      if(rm){
+        p.roomId=rm.id;p.state='treating';
+        const s=getStaffForRoom(rm.id);
+        let extra=0;if(s)s.traits.forEach(t=>{if(t.waitAdd)extra+=t.waitAdd;});
+        p.tLeft=Math.ceil((RDEFS[rm.type].tt||3)*2*getSpeedMult(rm))+extra;
+      }
+    } else if(p.state==='treating'){
+      p.tLeft--;
+      if(p.tLeft<=0){
+        const rm=rooms.find(r=>r.id===p.roomId);
+        if(rm){
+          const s=getStaffForRoom(rm.id);
+          if(s&&s.traits.find(t=>t.errorChance)&&Math.random()<s.traits.find(t=>t.errorChance).errorChance){p.tLeft=4;addLog(`${s.name} made an error — patient re-treated.`,'b');continue;}
+          if(p.contractTag!=='free_case')incAccum+=RDEFS[rm.type].rev*getRevMult(rm);
+          score+=Math.max(1,10-Math.floor(p.waitTime/4))+getScoreBonus(rm);
+          if(rm.type==='gp')dailyStats.gpVisits++;
+          if(cleanliness<45)score=Math.max(0,score-1);
+          if(s&&s.traits.find(t=>t.loseScore)&&Math.random()<.15){score=Math.max(0,score-5);addLog(`${s.name} lost patient notes!`,'b');}
+        }
+        p.step++;p.roomId=null;
+        if(p.step>=p.needs.length){
+          p.state='leaving';totalTreated++;dailyStats.treated++;
+          reputation=clamp(reputation+1,0,100);
+          repChanged=true;
+          if(activeContract?.type==='free_cases'&&p.contractTag==='free_case'){
+            activeContract.progress++;
+            addLog(`Contract progress: pro bono case treated (${activeContract.progress}/${activeContract.target}).`,'');
+            if(activeContract.progress>=activeContract.target)completeActiveContract();
+          }else if(activeContract?.type==='celebrity'&&p.contractTag==='celebrity'){
+            activeContract.progress++;
+            addLog('Celebrity contract complete. The donor is thrilled.','g');
+            completeActiveContract();
+          }
+        }
+        else p.state='waiting';
+      }
+    }
+  }
+  patients=patients.filter(p=>p.state!=='leaving');
+  document.getElementById('spat').textContent=patients.length;
+  document.getElementById('swait').textContent=waiting;
+  document.getElementById('rwaiting').textContent=waiting;
+  document.getElementById('rwaitingwarn').textContent=getWaitingStatus(waiting);
+  document.getElementById('sscore').textContent=Math.floor(score);
+  document.getElementById('rtreated').textContent=totalTreated;
+  if(repChanged){
+    document.getElementById('srep').textContent=Math.round(reputation);
+    document.getElementById('rrep').textContent=Math.round(reputation);
+    document.getElementById('rrepwarn').textContent=getReputationStatus();
+    if(reputation<=0)checkLoseConditions();
+  }
+  if(totalTreated===50)addLog('Goal reached: 50 patients treated!','g');
+}
+
+function flushIncome(){
+  if(incAccum>0){monthlyInc=Math.floor(incAccum);money+=monthlyInc;addLog(`Income: +$${monthlyInc}`,'g');incAccum=0;updateUI();}
+}
+
+const EVENTS=[
+  {m:'Flu outbreak! Surge incoming.',f:()=>{for(let i=0;i<6;i++)setTimeout(spawnPatient,i*400);}},
+  {m:'Government grant: +$3,000!',f:()=>{money+=3000;updateUI();}},
+  {m:'Staff appreciated! Morale up.',f:()=>{}},
+  {m:'Inspection passed — score bonus!',f:()=>{score+=20;}},
+  {m:'Cleaning audit praise: reputation +4.',f:()=>{reputation=clamp(reputation+4,0,100);cleanliness=clamp(cleanliness+6,0,100);updateUI();}},
+  {m:'Messy waiting room complaints: reputation -5.',f:()=>{reputation=clamp(reputation-5,0,100);cleanliness=clamp(cleanliness-8,0,100);updateUI();}},
+];
+function randomEvent(){
+  const dramaStaff=staff.filter(s=>s.hired&&s.traits.find(t=>t.dramaEvent));
+  if(Math.random()<0.25+dramaStaff.length*0.08){const e=EVENTS[Math.floor(Math.random()*EVENTS.length)];addLog(e.m,'');e.f();}
+}
+
+function setSpd(s){speed=s;paused=false;document.querySelectorAll('.sb').forEach((b,i)=>b.classList.toggle('on',[1,2,4][i]===s));document.getElementById('pbtn').textContent='⏸';}
+function togglePause(){paused=!paused;document.getElementById('pbtn').textContent=paused?'▶':'⏸';}
+
+function setSpd(s){speed=s;paused=false;document.querySelectorAll('.sb').forEach((b,i)=>b.classList.toggle('on',[1,2,4][i]===s));document.getElementById('pbtn').textContent='Pause';}
+function togglePause(){paused=!paused;document.getElementById('pbtn').textContent=paused?'Play':'Pause';}
+
+function drawMiniPerson(x,y,shirt){
+  ctx.fillStyle='rgba(0,0,0,0.12)';
+  ctx.beginPath();ctx.ellipse(x,y+11,5,2.5,0,0,Math.PI*2);ctx.fill();
+  ctx.fillStyle='#f3d6ba';
+  ctx.beginPath();ctx.arc(x,y,4.3,0,Math.PI*2);ctx.fill();
+  ctx.fillStyle=shirt;
+  ctx.fillRect(x-4,y+4,8,9);
+  ctx.strokeStyle='#5c6980';
+  ctx.lineWidth=1;
+  ctx.beginPath();ctx.moveTo(x-2,y+13);ctx.lineTo(x-3.5,y+18);ctx.moveTo(x+2,y+13);ctx.lineTo(x+3.5,y+18);ctx.stroke();
+}
+function drawTree(x,y,s){
+  ctx.fillStyle='rgba(70,106,65,0.16)';
+  ctx.beginPath();ctx.ellipse(x,y+11*s,12*s,5*s,0,0,Math.PI*2);ctx.fill();
+  ctx.fillStyle='#7d9e57';ctx.fillRect(x-2*s,y+1*s,4*s,14*s);
+  ctx.fillStyle='#7fc06b';
+  ctx.beginPath();ctx.arc(x,y,12*s,0,Math.PI*2);ctx.fill();
+  ctx.beginPath();ctx.arc(x-8*s,y+4*s,8*s,0,Math.PI*2);ctx.fill();
+  ctx.beginPath();ctx.arc(x+8*s,y+4*s,8*s,0,Math.PI*2);ctx.fill();
+}
+function drawRoomDecor(rm,d){
+  const x=rm.c*T+8,y=rm.r*T+8,w=rm.w*T-16,h=rm.h*T-16;
+  ctx.save();
+  ctx.strokeStyle='rgba(60,86,106,0.16)';
+  ctx.fillStyle='rgba(255,255,255,0.42)';
+  const addBed=(bx,by,bw,bh)=>{
+    ctx.fillStyle='rgba(255,255,255,0.84)';ctx.fillRect(bx,by,bw,bh);
+    ctx.fillStyle='rgba(141,194,213,0.95)';ctx.fillRect(bx+3,by+3,bw-8,bh-6);
+    ctx.fillStyle='rgba(232,240,247,0.96)';ctx.fillRect(bx+bw-8,by+2,6,6);
+    ctx.strokeRect(bx,by,bw,bh);
+  };
+  const addDesk=(bx,by,bw,bh,c)=>{
+    ctx.fillStyle=c;ctx.fillRect(bx,by,bw,bh);ctx.strokeRect(bx,by,bw,bh);
+    ctx.fillStyle='rgba(255,255,255,0.7)';ctx.fillRect(bx+3,by+3,Math.max(5,bw-10),Math.max(4,bh-6));
+  };
+  switch(rm.type){
+    case 'reception':
+      addDesk(x+8,y+h-18,w-16,10,'#dfc49d');
+      ctx.fillStyle='#8eb8dc';ctx.fillRect(x+14,y+h-24,12,6);ctx.fillRect(x+w-28,y+h-24,12,6);
+      break;
+    case 'waiting_room':
+      for(let row=0;row<2;row++)for(let col=0;col<3;col++){
+        const cx=x+18+col*24,cy=y+16+row*22;
+        ctx.fillStyle='#f4c878';ctx.beginPath();ctx.arc(cx,cy,7,0,Math.PI*2);ctx.fill();
+        ctx.fillStyle='#f0e7d8';ctx.fillRect(cx-7,cy+8,14,4);
+      }
+      break;
+    case 'gp':
+      addBed(x+8,y+10,w-22,16);
+      addDesk(x+w-28,y+h-20,18,10,'#d9c1a0');
+      break;
+    case 'er':
+      addBed(x+10,y+10,28,14);addBed(x+w-38,y+10,28,14);
+      ctx.fillStyle='#d45d5d';ctx.fillRect(x+w/2-7,y+h-18,14,14);
+      break;
+    case 'ward':
+      addBed(x+8,y+10,28,14);addBed(x+w-36,y+10,28,14);addBed(x+w/2-14,y+h-22,28,14);
+      break;
+    case 'xray':
+      ctx.fillStyle='#8ea6cd';ctx.beginPath();ctx.arc(x+w/2,y+h/2,16,0,Math.PI*2);ctx.fill();
+      addBed(x+10,y+h-24,w-20,12);
+      break;
+    case 'pharmacy':
+      for(let i=0;i<3;i++)addDesk(x+10+i*20,y+10,14,h-20,'#ecd7aa');
+      break;
+    case 'surgery':
+      addBed(x+w/2-22,y+h/2-8,44,16);
+      ctx.fillStyle='#86bdd9';ctx.beginPath();ctx.arc(x+w/2,y+18,12,0,Math.PI*2);ctx.fill();
+      break;
+    case 'lab':
+      addDesk(x+8,y+h-18,w-16,10,'#d3c7e8');
+      ctx.fillStyle='#90d29a';ctx.fillRect(x+14,y+12,6,12);ctx.fillStyle='#7cb0d8';ctx.fillRect(x+26,y+12,6,12);
+      break;
+    case 'head_office':
+      addDesk(x+10,y+h-22,w-20,14,'#e1c49e');
+      ctx.fillStyle='#7db27b';ctx.beginPath();ctx.arc(x+w-16,y+16,8,0,Math.PI*2);ctx.fill();
+      break;
+  }
+  ctx.restore();
+}
+function drawCampusBackdrop(){
+  const sky=ctx.createLinearGradient(0,0,0,cv.height);
+  sky.addColorStop(0,'#d4f0ff');sky.addColorStop(0.45,'#bfe6fb');sky.addColorStop(1,'#9cd0ef');
+  ctx.fillStyle=sky;ctx.fillRect(0,0,cv.width,cv.height);
+  ctx.fillStyle='rgba(255,255,255,0.24)';
+  ctx.beginPath();ctx.arc(94,74,42,0,Math.PI*2);ctx.fill();
+  ctx.fillStyle='#7fc2e6';ctx.beginPath();ctx.ellipse(cv.width-104,108,98,62,0,0,Math.PI*2);ctx.fill();
+  ctx.fillStyle='#90d06b';rrect(62,54,cv.width-124,cv.height-126,32);ctx.fill();
+  ctx.fillStyle='#6e5f58';
+  ctx.beginPath();
+  ctx.moveTo(0,cv.height-112);ctx.lineTo(210,cv.height-28);ctx.lineTo(210,cv.height);ctx.lineTo(0,cv.height);ctx.closePath();ctx.fill();
+  ctx.strokeStyle='rgba(255,255,255,0.72)';ctx.lineWidth=2;
+  ctx.beginPath();ctx.moveTo(18,cv.height-98);ctx.lineTo(168,cv.height-38);ctx.stroke();
+  ctx.lineWidth=1.5;
+  for(let i=0;i<5;i++){
+    const px=30+i*34,py=cv.height-78+i*14;
+    ctx.strokeRect(px,py,18,11);
+  }
+  ctx.strokeStyle='rgba(255,245,170,0.75)';ctx.beginPath();ctx.arc(38,cv.height-60,26,0,Math.PI*2);ctx.stroke();
+  ctx.fillStyle='#ffffff';ctx.fillRect(50,cv.height-56,18,8);ctx.fillStyle='#d45b5b';ctx.fillRect(57,cv.height-60,4,16);ctx.fillRect(51,cv.height-54,16,4);
+  ctx.fillStyle='#8ab66e';ctx.fillRect(cv.width-188,cv.height-122,80,44);
+  ctx.fillStyle='#f3f7fc';ctx.fillRect(cv.width-180,cv.height-114,24,16);ctx.fillRect(cv.width-148,cv.height-114,24,16);ctx.fillRect(cv.width-116,cv.height-114,24,16);
+  ctx.fillStyle='#c44f4f';ctx.fillRect(cv.width-178,cv.height-112,18,12);
+  ctx.fillStyle='#4f88c4';ctx.fillRect(cv.width-146,cv.height-112,18,12);
+  ctx.fillStyle='#d5b44d';ctx.fillRect(cv.width-114,cv.height-112,18,12);
+  [[94,156,1],[132,406,1.15],[228,120,1.05],[764,138,1.1],[790,370,1.18],[682,412,1],[624,76,.92]].forEach(t=>drawTree(t[0],t[1],t[2]));
+}
+function render(){
+  ctx.clearRect(0,0,cv.width,cv.height);
+  drawCampusBackdrop();
+
+  for(let r=0;r<ROWS;r++)for(let c=0;c<COLS;c++){
+    if(grid[r][c]==='corridor'){
+      const x=c*T,y=r*T;
+      ctx.fillStyle='rgba(255,247,229,0.95)';
+      ctx.shadowColor='rgba(75,109,139,0.12)';ctx.shadowBlur=6;ctx.shadowOffsetY=2;
+      rrect(x+3,y+3,T-6,T-6,10);ctx.fill();
+      ctx.shadowColor='transparent';
+      ctx.strokeStyle='rgba(212,184,134,0.72)';ctx.lineWidth=1;
+      rrect(x+3,y+3,T-6,T-6,10);ctx.stroke();
+      ctx.fillStyle='rgba(223,201,157,0.72)';ctx.fillRect(x+10,y+20,T-20,4);
+    }
+  }
+
+  ctx.strokeStyle='rgba(255,255,255,0.18)';ctx.lineWidth=.6;
+  for(let r=0;r<=ROWS;r++){ctx.beginPath();ctx.moveTo(0,r*T);ctx.lineTo(COLS*T,r*T);ctx.stroke();}
+  for(let c=0;c<=COLS;c++){ctx.beginPath();ctx.moveTo(c*T,0);ctx.lineTo(c*T,ROWS*T);ctx.stroke();}
+
+  for(const rm of rooms){
+    const d=RDEFS[rm.type];
+    const conn=isConn(rm);
+    const hasStaff=!d.staffRole||!!getStaffForRoom(rm.id);
+    const rx=rm.c*T+2,ry=rm.r*T+2,rw=rm.w*T-4,rh=rm.h*T-4;
+    ctx.fillStyle='rgba(64,88,108,0.12)';
+    rrect(rx+4,ry+8,rw,rh,16);ctx.fill();
+    ctx.fillStyle=conn?d.color:'#cfd9df';
+    ctx.strokeStyle=conn?(hasStaff?d.border:'#cf9c53'):'#99a8b6';
+    ctx.lineWidth=2.2;
+    rrect(rx,ry,rw,rh,16);ctx.fill();ctx.stroke();
+    ctx.fillStyle='rgba(255,255,255,0.52)';
+    rrect(rx+6,ry+6,rw-12,Math.max(18,rh*0.32),12);ctx.fill();
+    if(!hasStaff&&conn&&d.staffRole){ctx.fillStyle='rgba(214,156,64,0.14)';rrect(rx,ry,rw,rh,16);ctx.fill();}
+    drawRoomDecor(rm,d);
+    const roomPatients=patients.filter(p=>p.roomId===rm.id).slice(0,3);
+    roomPatients.forEach((p,i)=>drawMiniPerson(rx+20+i*18,ry+rh-22,p.urg==='urgent'?'#e26363':p.urg==='moderate'?'#de9a42':'#5e9bc7'));
+    const staffer=getStaffForRoom(rm.id);
+    if(staffer)drawMiniPerson(rx+rw-20,ry+rh-24,'#5fbe8e');
+
+    ctx.fillStyle='rgba(255,255,255,0.94)';
+    rrect(rx+8,ry+8,Math.min(rw-16,78),20,10);ctx.fill();
+    ctx.fillStyle='#31485f';ctx.font='700 10px Trebuchet MS';ctx.textAlign='left';ctx.textBaseline='middle';
+    ctx.fillText(d.name,rx+14,ry+18);
+
+    ctx.fillStyle='rgba(51,84,110,0.85)';
+    rrect(rx+rw-36,ry+8,28,18,9);ctx.fill();
+    ctx.fillStyle='#eef8ff';ctx.font='700 9px Trebuchet MS';ctx.textAlign='center';
+    ctx.fillText(`${patients.filter(p=>p.roomId===rm.id).length}`,rx+rw-22,ry+18);
+
+    ctx.font='700 8px Trebuchet MS';
+    if(!d.staffRole){
+      ctx.fillStyle='rgba(83,104,120,0.78)';
+      ctx.fillText(waitingRoomConnectedToReception(rm)?'linked':'needs desk',rx+rw/2,ry+rh-12);
+    }else if(!staffer){
+      ctx.fillStyle='rgba(178,104,52,0.9)';
+      ctx.fillText('staff needed',rx+rw/2,ry+rh-12);
+    }
+  }
+
+  const queue=patients.filter(p=>!p.roomId).slice(0,12);
+  queue.forEach((p,i)=>{
+    const col=i%4,row=Math.floor(i/4);
+    drawMiniPerson(84+col*24,cv.height-86+row*26,p.contractTag==='celebrity'?'#d2aa35':p.contractTag==='free_case'?'#61a86d':p.urg==='urgent'?'#e26363':p.urg==='moderate'?'#de9a42':'#5e9bc7');
+  });
+  if(queue.length){
+    ctx.fillStyle='rgba(255,255,255,0.92)';rrect(34,cv.height-126,98,24,12);ctx.fill();
+    ctx.fillStyle='#31485f';ctx.font='700 11px Trebuchet MS';ctx.textAlign='center';ctx.fillText(`Queue ${waitingPatientsCount()}`,83,cv.height-114);
+  }
+
+  if(cleanliness<45){
+    ctx.fillStyle='rgba(120,100,60,0.08)';
+    for(let i=0;i<Math.ceil((100-cleanliness)/8);i++){
+      const x=(i*97)%cv.width,y=(i*53)%cv.height;
+      ctx.fillRect(x+8,y+8,8,5);
+    }
+  }
+
+  if(selTool==='corridor'&&hover.x>=0&&inBounds(hover.x,hover.y)&&!tileOccupied(hover.x,hover.y)){
+    ctx.fillStyle='rgba(255,245,183,0.72)';rrect(hover.x*T+3,hover.y*T+3,T-6,T-6,10);ctx.fill();
+  } else if(selTool&&RDEFS[selTool]&&hover.x>=0){
+    const d=RDEFS[selTool];
+    const pc=Math.max(0,Math.min(hover.x,COLS-d.w)),pr=Math.max(0,Math.min(hover.y,ROWS-d.h));
+    let ok=money>=d.cost&&corridorAdj(pc,pr,d.w,d.h);
+    if(selTool==='waiting_room'&&ok)ok=roomAdjacentToType(pc,pr,d.w,d.h,'reception');
+    for(let rr2=pr;rr2<pr+d.h&&ok;rr2++)for(let cc=pc;cc<pc+d.w&&ok;cc++)if(tileOccupied(cc,rr2))ok=false;
+    ctx.fillStyle=ok?'rgba(119,215,126,0.24)':'rgba(232,97,97,0.2)';
+    ctx.strokeStyle=ok?'#58ad63':'#d05f5f';ctx.lineWidth=2;
+    rrect(pc*T+2,pr*T+2,d.w*T-4,d.h*T-4,16);ctx.fill();ctx.stroke();
+  } else if(selTool==='demolish'&&hover.x>=0){
+    const rm=roomAt(hover.x,hover.y);
+    if(rm){ctx.fillStyle='rgba(221,86,86,0.24)';ctx.strokeStyle='#cf4f4f';ctx.lineWidth=2;rrect(rm.c*T+2,rm.r*T+2,rm.w*T-4,rm.h*T-4,16);ctx.fill();ctx.stroke();}
+    else if(inBounds(hover.x,hover.y)&&grid[hover.y][hover.x]){ctx.fillStyle='rgba(221,86,86,0.26)';rrect(hover.x*T+3,hover.y*T+3,T-6,T-6,10);ctx.fill();}
+  }
+}
+
+function rrect(x,y,w,h,r){ctx.beginPath();ctx.moveTo(x+r,y);ctx.lineTo(x+w-r,y);ctx.arcTo(x+w,y,x+w,y+r,r);ctx.lineTo(x+w,y+h-r);ctx.arcTo(x+w,y+h,x+w-r,y+h,r);ctx.lineTo(x+r,y+h);ctx.arcTo(x,y+h,x,y+h-r,r);ctx.lineTo(x,y+r);ctx.arcTo(x,y,x+r,y,r);ctx.closePath();}
+
+let last=null;
+function loop(ts){if(last!==null)tick(ts-last);last=ts;requestAnimationFrame(loop);}
+resetGameState(true);
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>
