@@ -1,0 +1,47 @@
+<svg width="128" height="128" viewBox="0 0 128 128" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="card" x1="18" y1="14" x2="112" y2="114" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFFDFE"/>
+      <stop offset="1" stop-color="#FFE6EB"/>
+    </linearGradient>
+    <linearGradient id="cross" x1="42" y1="30" x2="89" y2="87" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FF8585"/>
+      <stop offset="0.55" stop-color="#F24F5B"/>
+      <stop offset="1" stop-color="#BF2F43"/>
+    </linearGradient>
+    <radialGradient id="urgencyGlow" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(64 60) rotate(90) scale(36 36)">
+      <stop stop-color="#FFA3AD" stop-opacity="0.78"/>
+      <stop offset="0.55" stop-color="#FF7A8C" stop-opacity="0.24"/>
+      <stop offset="1" stop-color="#FF7A8C" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="shine" x1="28" y1="24" x2="76" y2="56" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFFFFF" stop-opacity="0.82"/>
+      <stop offset="1" stop-color="#FFFFFF" stop-opacity="0"/>
+    </linearGradient>
+    <filter id="cardShadow" x="8" y="8" width="112" height="112" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feDropShadow dx="0" dy="8" stdDeviation="8" flood-color="#7C4A57" flood-opacity="0.18"/>
+    </filter>
+    <filter id="crossShadow" x="28" y="22" width="72" height="76" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feDropShadow dx="0" dy="4" stdDeviation="4" flood-color="#C83C4E" flood-opacity="0.34"/>
+    </filter>
+  </defs>
+
+  <g filter="url(#cardShadow)">
+    <rect x="16" y="16" width="96" height="96" rx="28" fill="url(#card)"/>
+    <rect x="16.75" y="16.75" width="94.5" height="94.5" rx="27.25" stroke="#E8C3CB" stroke-width="1.5"/>
+
+    <rect x="24" y="24" width="80" height="22" rx="11" fill="url(#shine)"/>
+    <circle cx="64" cy="60" r="36" fill="url(#urgencyGlow)"/>
+    <circle cx="64" cy="60" r="27" fill="#FFF7F8" fill-opacity="0.65"/>
+
+    <g filter="url(#crossShadow)">
+      <path d="M55 31C55 28.8 56.8 27 59 27H69C71.2 27 73 28.8 73 31V46H88C90.2 46 92 47.8 92 50V60C92 62.2 90.2 64 88 64H73V79C73 81.2 71.2 83 69 83H59C56.8 83 55 81.2 55 79V64H40C37.8 64 36 62.2 36 60V50C36 47.8 37.8 46 40 46H55V31Z" fill="url(#cross)"/>
+      <path d="M55 31C55 28.8 56.8 27 59 27H69C71.2 27 73 28.8 73 31V46H88C90.2 46 92 47.8 92 50V60C92 62.2 90.2 64 88 64H73V79C73 81.2 71.2 83 69 83H59C56.8 83 55 81.2 55 79V64H40C37.8 64 36 62.2 36 60V50C36 47.8 37.8 46 40 46H55V31Z" stroke="#7A2232" stroke-width="3"/>
+      <path d="M59 33H69V37H59V33ZM40 50H88V54H40V50Z" fill="#FFD2D8" fill-opacity="0.64"/>
+    </g>
+
+    <path d="M43 94H85" stroke="#8B4052" stroke-width="3" stroke-linecap="round" opacity="0.18"/>
+    <circle cx="91" cy="39" r="4" fill="#FFD564" fill-opacity="0.95"/>
+    <circle cx="91" cy="39" r="7" stroke="#FFD564" stroke-opacity="0.28" stroke-width="2"/>
+  </g>
+</svg>
