@@ -1,0 +1,21 @@
+<svg width="128" height="128" viewBox="0 0 128 128" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="card" x1="18" y1="14" x2="110" y2="114" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFFDF4"/>
+      <stop offset="1" stop-color="#FFE8A8"/>
+    </linearGradient>
+    <linearGradient id="star" x1="34" y1="28" x2="86" y2="88" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFE885"/>
+      <stop offset="1" stop-color="#F1BB45"/>
+    </linearGradient>
+    <filter id="shadow" x="8" y="8" width="112" height="112" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feDropShadow dx="0" dy="8" stdDeviation="8" flood-color="#A58431" flood-opacity="0.18"/>
+    </filter>
+  </defs>
+  <g filter="url(#shadow)">
+    <rect x="16" y="16" width="96" height="96" rx="28" fill="url(#card)"/>
+    <rect x="16.75" y="16.75" width="94.5" height="94.5" rx="27.25" stroke="#E8D396" stroke-width="1.5"/>
+    <path d="M64 29L72.8 46.9L92.5 49.8L78.2 63.8L81.6 83.5L64 74.3L46.4 83.5L49.8 63.8L35.5 49.8L55.2 46.9L64 29Z" fill="url(#star)"/>
+    <path d="M64 29L72.8 46.9L92.5 49.8L78.2 63.8L81.6 83.5L64 74.3L46.4 83.5L49.8 63.8L35.5 49.8L55.2 46.9L64 29Z" stroke="#2C536F" stroke-width="3.2" stroke-linejoin="round"/>
+  </g>
+</svg>

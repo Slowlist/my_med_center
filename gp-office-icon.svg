@@ -1,0 +1,42 @@
+<svg width="128" height="128" viewBox="0 0 128 128" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="18" y1="14" x2="108" y2="114" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#F7FCFF"/>
+      <stop offset="1" stop-color="#D9ECFF"/>
+    </linearGradient>
+    <linearGradient id="desk" x1="36" y1="70" x2="92" y2="98" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#B78B66"/>
+      <stop offset="1" stop-color="#8F694C"/>
+    </linearGradient>
+    <linearGradient id="screen" x1="54" y1="34" x2="86" y2="60" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#BEE9FF"/>
+      <stop offset="1" stop-color="#78B8F0"/>
+    </linearGradient>
+    <linearGradient id="chair" x1="28" y1="58" x2="52" y2="92" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#96DDB5"/>
+      <stop offset="1" stop-color="#61B98A"/>
+    </linearGradient>
+    <filter id="shadow" x="8" y="8" width="112" height="112" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feDropShadow dx="0" dy="8" stdDeviation="8" flood-color="#5F88AF" flood-opacity="0.18"/>
+    </filter>
+  </defs>
+
+  <g filter="url(#shadow)">
+    <rect x="16" y="16" width="96" height="96" rx="28" fill="url(#bg)"/>
+    <rect x="16.75" y="16.75" width="94.5" height="94.5" rx="27.25" stroke="#B8D6EE" stroke-width="1.5"/>
+
+    <rect x="38" y="72" width="52" height="14" rx="6" fill="url(#desk)"/>
+    <rect x="44" y="84" width="4" height="12" rx="2" fill="#7A5A42"/>
+    <rect x="80" y="84" width="4" height="12" rx="2" fill="#7A5A42"/>
+
+    <rect x="52" y="34" width="34" height="24" rx="7" fill="#EFF8FF" stroke="#2C536F" stroke-width="3"/>
+    <rect x="56" y="38" width="26" height="16" rx="4" fill="url(#screen)"/>
+    <rect x="64" y="58" width="10" height="4" rx="2" fill="#2C536F"/>
+    <rect x="58" y="62" width="22" height="4" rx="2" fill="#85A8C4"/>
+
+    <path d="M32 76C32 69.4 37.4 64 44 64H48C50.2 64 52 65.8 52 68V74C52 76.2 50.2 78 48 78H40V86H47C49.2 86 51 87.8 51 90V92C51 94.2 49.2 96 47 96H37C34.2 96 32 93.8 32 91V76Z" fill="url(#chair)"/>
+    <path d="M32 76C32 69.4 37.4 64 44 64H48C50.2 64 52 65.8 52 68V74C52 76.2 50.2 78 48 78H40V86H47C49.2 86 51 87.8 51 90V92C51 94.2 49.2 96 47 96H37C34.2 96 32 93.8 32 91V76Z" stroke="#2C536F" stroke-width="3" stroke-linejoin="round"/>
+
+    <rect x="90" y="70" width="8" height="8" rx="3" fill="#FFD775" stroke="#2C536F" stroke-width="2"/>
+  </g>
+</svg>

@@ -1,0 +1,48 @@
+<svg width="128" height="128" viewBox="0 0 128 128" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="card" x1="18" y1="14" x2="110" y2="114" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#F9FDFF"/>
+      <stop offset="1" stop-color="#E1EEF8"/>
+    </linearGradient>
+    <linearGradient id="bed" x1="30" y1="68" x2="88" y2="92" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFFFFF"/>
+      <stop offset="1" stop-color="#E5EEF6"/>
+    </linearGradient>
+    <linearGradient id="pillow" x1="34" y1="58" x2="52" y2="74" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#BCE9E8"/>
+      <stop offset="1" stop-color="#84C8C8"/>
+    </linearGradient>
+    <linearGradient id="monitor" x1="78" y1="38" x2="96" y2="56" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#C6ECFF"/>
+      <stop offset="1" stop-color="#88BDEB"/>
+    </linearGradient>
+    <filter id="shadow" x="8" y="8" width="112" height="112" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feDropShadow dx="0" dy="8" stdDeviation="8" flood-color="#5F86A8" flood-opacity="0.16"/>
+    </filter>
+  </defs>
+
+  <g filter="url(#shadow)">
+    <rect x="16" y="16" width="96" height="96" rx="28" fill="url(#card)"/>
+    <rect x="16.75" y="16.75" width="94.5" height="94.5" rx="27.25" stroke="#BED5E6" stroke-width="1.5"/>
+
+    <rect x="25" y="25" width="78" height="18" rx="9" fill="white" fill-opacity="0.56"/>
+
+    <rect x="30" y="66" width="56" height="18" rx="7" fill="url(#bed)"/>
+    <rect x="30" y="66" width="56" height="18" rx="7" stroke="#2C536F" stroke-width="3"/>
+
+    <rect x="34" y="58" width="16" height="12" rx="5" fill="url(#pillow)"/>
+    <rect x="34" y="58" width="16" height="12" rx="5" stroke="#2C536F" stroke-width="2.4"/>
+
+    <rect x="26" y="60" width="6" height="34" rx="3" fill="#7D93A8"/>
+    <rect x="84" y="72" width="18" height="6" rx="3" fill="#7D93A8"/>
+    <rect x="36" y="84" width="4" height="12" rx="2" fill="#7D93A8"/>
+    <rect x="76" y="84" width="4" height="12" rx="2" fill="#7D93A8"/>
+
+    <rect x="78" y="38" width="18" height="14" rx="4" fill="url(#monitor)"/>
+    <rect x="78" y="38" width="18" height="14" rx="4" stroke="#2C536F" stroke-width="2.4"/>
+    <path d="M81 45H84.5L86.2 42L88 48L89.8 44.6H93" stroke="#4DB08D" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+    <rect x="84.5" y="52" width="5" height="4" rx="2" fill="#7D93A8"/>
+
+    <path d="M32 98H95" stroke="#7B97B1" stroke-width="3" stroke-linecap="round" opacity="0.22"/>
+  </g>
+</svg>
