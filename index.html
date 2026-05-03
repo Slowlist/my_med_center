@@ -10,14 +10,18 @@
 <div id="game">
   <div id="topbar">
     <div id="brand">
-      <img class="brand-logo" src="assets/my-medical-center-logo.svg" alt="My Medical Center">
+      <img class="brand-logo" src="assets/my-medical-center-logo.svg" alt="My Medical Center" onerror="this.style.display='none'">
+      <label class="brand-center-name" for="custom-center-name">
+        <span class="brand-center-label">Hospital Name</span>
+        <input id="custom-center-name" class="subbrand-input brand-center-input" type="text" maxlength="40" value="Community Hospital Management Sim" placeholder="Enter your hospital name" oninput="updateCustomCenterName(this.value)" onkeydown="handleCenterNameKeydown(event)">
+      </label>
     </div>
   <div id="topstats">
-    <div class="stat stat-primary stat-cash">
+    <div class="stat stat-primary stat-cash" data-tt-stat="money">
       <span class="stat-icon icon-cash"></span>
       <span class="stat-copy"><span class="stat-label">Cash</span><b id="smoney">500,000</b></span>
     </div>
-    <div class="stat stat-tertiary stat-day">
+    <div class="stat stat-tertiary stat-day" title="Current in-game day. Government contract reviews happen every 30 days.">
       <span class="stat-icon">&#x1F4C5;</span>
       <span class="stat-copy"><span class="stat-label">Day</span><b id="sday">1</b></span>
     </div>
@@ -33,26 +37,31 @@
       <span class="stat-icon">🎓</span>
       <span class="stat-copy"><span class="stat-label">Grade</span><b id="sgrade">A+</b></span>
     </div>
-    <div class="stat stat-secondary stat-rep">
+    <div class="stat stat-difficulty" id="diffstat" title="Current difficulty mode for this run.">
+      <span id="difficulty-badge" class="difficulty-badge" style="display:none"></span>
+      <button type="button" id="campus-badge" class="campus-badge map-dropdown" style="display:none" onclick="toggleMapInfoMenu(event)" aria-haspopup="true" aria-expanded="false"></button>
+      <div id="map-info-menu" class="map-info-menu" style="display:none" role="menu"></div>
+    </div>
+    <div class="stat stat-secondary stat-rep" data-tt-stat="reputation">
       <span class="stat-icon icon-reputation"></span>
       <span class="stat-copy"><span class="stat-label">Rep</span><b id="srep">70</b></span>
     </div>
-    <div class="stat stat-clean">
+    <div class="stat stat-clean" data-tt-stat="cleanliness">
       <span class="stat-icon icon-cleanliness"></span><span class="stat-copy"><span class="stat-label">Cleanliness</span><b id="sclean">78</b></span>
     </div>
-    <div class="stat stat-stress" id="stresscard">
+    <div class="stat stat-stress" id="stresscard" title="Hospital Stress (0–100). Rises from long waits, dirty rooms, and overworked staff. Above 70 hurts reputation. Above 88 is critical.">
       <span class="stat-icon icon-stress"></span>
       <span class="stat-copy"><span class="stat-label">Stress</span><b id="sstress">0</b><span class="stat-note" id="sstressnote">Low</span></span>
     </div>
-    <div class="stat stat-patients">
+    <div class="stat stat-patients" data-tt-stat="rp">
       <span class="stat-icon">🩺</span>
       <span class="stat-copy"><span class="stat-label">RP</span><b id="spat">0</b></span>
     </div>
-    <div class="stat stat-waiting">
+    <div class="stat stat-waiting" title="Patients currently waiting in the queue. When this exceeds waiting room capacity, stress rises and reputation falls.">
       <span class="stat-icon">⏳</span>
       <span class="stat-copy"><span class="stat-label">Waiting</span><b id="swait">0</b></span>
     </div>
-    <div class="stat stat-staff">
+    <div class="stat stat-staff" title="Total hired staff. Rooms need specific staff roles to operate. Understaffed rooms increase wait times and stress.">
       <span class="stat-icon">👥</span>
       <span class="stat-copy"><span class="stat-label">Staff</span><b id="sstaff">0</b></span>
     </div>
@@ -61,23 +70,8 @@
     <button class="sb on" id="spdbtn" onclick="cycleSpeed()">Speed 1x</button>
     <button class="sb" id="pbtn" onclick="togglePause()">Play</button>
     <button class="sb on" id="buildmodebtn" onclick="toggleBuildMode()">Build On</button>
-    <button class="sb" id="rotatebtn" type="button" onclick="rotateBuildTool()">Rotate</button>
-    <div class="floor-control" id="floorctrl">
-      <button class="floor-step" id="floordown" type="button" aria-label="Previous floor" onclick="nudgeFloor(-1)">&#8722;</button>
-      <div class="floor-copy">
-        <span class="floor-label" id="floorlabel">Floor 1</span>
-        <span class="floor-meta" id="floormeta">Unlocked 1/10</span>
-      </div>
-      <button class="floor-step" id="floorup" type="button" aria-label="Next floor" onclick="nudgeFloor(1)">&#10010;</button>
-    </div>
-    <div class="zoom-control horizontal" id="topzoom">
-      <span class="zoom-label">Zoom</span>
-      <span class="zoom-value" id="zoomlabel"><span id="zoompct">100%</span><span class="zoom-context" id="zoomcontext">Default</span></span>
-      <button class="zoom-step" type="button" aria-label="Zoom out" onclick="nudgeZoom(-1)"><span class="zoom-step-icon">&#8722;</span></button>
-      <input id="zoomslider" class="slider-track slider-thumb" type="range" min="80" max="160" step="20" value="100" oninput="setZoomFromSlider(this.value)">
-      <button class="zoom-step" type="button" aria-label="Zoom in" onclick="nudgeZoom(1)"><span class="zoom-step-icon">&#10010;</span></button>
-    </div>
     <button class="mb btn-menu" onclick="quitToTitle()">Main Menu</button>
+    <button class="mb btn-settings" onclick="openSettings()" title="Settings">&#9881;</button>
   </div>
 </div>
 <div id="sidebar">
@@ -107,8 +101,12 @@
   <button class="rb" data-tool="hr_office" data-desc="Needs: HR manager" onclick="sel('hr_office')"><span class="rn"><span class="room-icon">&#x1F4CB;</span>HR Office</span><span class="rp">$2,600</span><span class="rd">Needs: HR manager</span></button>
   <button class="rb" data-tool="dispatch_office" data-desc="Unlock via research" onclick="sel('dispatch_office')"><span class="rn"><span class="room-icon">&#x1F691;</span>Dispatch</span><span class="rp">$3,200</span><span class="rd">Unlock via research</span></button>
   <button class="rb" data-tool="ambulance_bay" data-desc="Touch Dispatch + ER" onclick="sel('ambulance_bay')"><span class="rn"><span class="room-icon">&#x1F691;</span>Ambulance Bay</span><span class="rp">$2,600</span><span class="rd">Touch Dispatch + ER</span></button>
-  <button class="rb" data-tool="staircase" data-desc="Unlocks the next floor" onclick="sel('staircase')"><span class="rn"><span class="room-icon">&#x1FA9C;</span>Staircase</span><span class="rp">$1,800</span><span class="rd">Unlocks the next floor</span></button>
-  <button class="rb" data-tool="elevator" data-desc="Unlocks the next floor" onclick="sel('elevator')"><span class="rn"><span class="room-icon">&#x1F6D7;</span>Elevator</span><span class="rp">$2,600</span><span class="rd">Unlocks the next floor</span></button>
+  <button class="rb" data-tool="parking_expansion" data-desc="Adds visitor parking capacity" onclick="sel('parking_expansion')"><span class="rn"><span class="room-icon">&#x1F17F;</span>Parking Expansion</span><span class="rp">$1,800</span><span class="rd">+12 visitor spaces</span></button>
+  <button class="rb" data-tool="staff_parking" data-desc="Dedicated staff parking" onclick="sel('staff_parking')"><span class="rn"><span class="room-icon">&#x1F694;</span>Staff Parking</span><span class="rp">$1,500</span><span class="rd">+8 staff spaces</span></button>
+  <button class="rb" data-tool="service_loading_dock" data-desc="Improves service & supply access" onclick="sel('service_loading_dock')"><span class="rn"><span class="room-icon">&#x1F69A;</span>Service Loading Dock</span><span class="rp">$2,000</span><span class="rd">Reduces supply delay risk</span></button>
+  <button class="rb" data-tool="traffic_management_office" data-desc="Lowers congestion across the campus" onclick="sel('traffic_management_office')"><span class="rn"><span class="room-icon">&#x1F6A6;</span>Traffic Management Office</span><span class="rp">$2,400</span><span class="rd">Needs: clerical staff</span></button>
+  <button class="rb" data-tool="staircase" data-desc="Unlocks the next floor" onclick="sel('staircase')"><span class="rn"><span class="room-icon icon-room-staircase"></span>Staircase</span><span class="rp">$1,800</span><span class="rd">Unlocks the next floor</span></button>
+  <button class="rb" data-tool="elevator" data-desc="Unlocks the next floor" onclick="sel('elevator')"><span class="rn"><span class="room-icon icon-room-elevator"></span>Elevator</span><span class="rp">$2,600</span><span class="rd">Unlocks the next floor</span></button>
   <button class="rb" data-tool="gp" data-desc="Needs: GP doctor" onclick="sel('gp')"><span class="rn"><span class="room-icon icon-room-gp"></span>GP Office</span><span class="rp">$1,500</span><span class="rd">Needs: GP doctor</span></button>
   <button class="rb" data-tool="vip_room" data-desc="Needs: GP doctor + nurse + clerical" onclick="sel('vip_room')"><span class="rn"><span class="room-icon">&#x1F451;</span>VIP Room</span><span class="rp">$4,200</span><span class="rd">Needs: GP doctor + nurse + clerical</span></button>
   <button class="rb" data-tool="er" data-desc="Needs: ER doctor" onclick="sel('er')"><span class="rn"><span class="room-icon icon-room-er"></span>ER</span><span class="rp">$3,000</span><span class="rd">Needs: ER doctor</span></button>
@@ -116,14 +114,14 @@
   <button class="rb" data-tool="pediatrics" data-desc="Needs: GP doctor + nurse pediatric care" onclick="sel('pediatrics')"><span class="rn"><span class="room-icon">&#x1F9F8;</span>Pediatrics</span><span class="rp">$3,600</span><span class="rd">Needs: GP doctor + nurse pediatric care</span></button>
   <button class="rb" data-tool="obgyn" data-desc="Needs: surgeon + nurse labor and delivery" onclick="sel('obgyn')"><span class="rn"><span class="room-icon">&#x1F476;</span>OB/GYN</span><span class="rp">$5,400</span><span class="rd">Needs: surgeon + nurse labor and delivery</span></button>
   <button class="rb" data-tool="head_office" data-desc="Needs: dept. attending" onclick="sel('head_office')"><span class="rn"><span class="room-icon">&#x1F3E2;</span>Dept. Head Office</span><span class="rp">$2,200</span><span class="rd">Needs: dept. attending</span></button>
-  <button class="rb" data-tool="radiology" data-desc="Needs: dept. attending imaging services" onclick="sel('radiology')"><span class="rn"><span class="room-icon">&#x1FA7B;</span>Radiology</span><span class="rp">$4,800</span><span class="rd">Needs: dept. attending imaging services</span></button>
+  <button class="rb" data-tool="radiology" data-desc="Needs: dept. attending imaging services" onclick="sel('radiology')"><span class="rn"><span class="room-icon icon-room-radiology"></span>Radiology</span><span class="rp">$4,800</span><span class="rd">Needs: dept. attending imaging services</span></button>
   <button class="rb" data-tool="xray" data-desc="Needs: dept. attending" onclick="sel('xray')"><span class="rn"><span class="room-icon">&#x1F9B4;</span>X-Ray</span><span class="rp">$2,000</span><span class="rd">Needs: dept. attending</span></button>
   <button class="rb" data-tool="pharmacy" data-desc="Needs: pharmacist" onclick="sel('pharmacy')"><span class="rn"><span class="room-icon icon-room-pharmacy"></span>Pharmacy</span><span class="rp">$1,200</span><span class="rd">Needs: pharmacist</span></button>
   <button class="rb" data-tool="surgery" data-desc="Needs: surgeon + ER attending" onclick="sel('surgery')"><span class="rn"><span class="room-icon">&#x2695;&#xFE0F;</span>Surgery</span><span class="rp">$6,000</span><span class="rd">Needs: surgeon + ER attending</span></button>
   <button class="rb" data-tool="ward" data-desc="Needs: nurse + CNA" onclick="sel('ward')"><span class="rn"><span class="room-icon icon-room-ward"></span>Ward</span><span class="rp">$2,500</span><span class="rd">Needs: nurse + CNA</span></button>
   <button class="rb" data-tool="rehab" data-desc="Needs: nurse + CNA recovery support" onclick="sel('rehab')"><span class="rn"><span class="room-icon">&#x1F9BF;</span>Rehab</span><span class="rp">$3,200</span><span class="rd">Needs: nurse + CNA recovery support</span></button>
-  <button class="rb" data-tool="single_hospital_room" data-desc="Needs: nurse + CNA" onclick="sel('single_hospital_room')"><span class="rn"><span class="room-icon icon-room-ward"></span>Single Hospital Room</span><span class="rp">$3,400</span><span class="rd">Needs: nurse + CNA</span></button>
-  <button class="rb" data-tool="double_hospital_room" data-desc="Needs: nurse + CNA" onclick="sel('double_hospital_room')"><span class="rn"><span class="room-icon icon-room-ward"></span>Double Hospital Room</span><span class="rp">$4,800</span><span class="rd">Needs: nurse + CNA</span></button>
+  <button class="rb" data-tool="single_hospital_room" data-desc="Needs: nurse + CNA" onclick="sel('single_hospital_room')"><span class="rn"><span class="room-icon icon-room-single_hospital_room"></span>Single Hospital Room</span><span class="rp">$3,400</span><span class="rd">Needs: nurse + CNA</span></button>
+  <button class="rb" data-tool="double_hospital_room" data-desc="Needs: nurse + CNA" onclick="sel('double_hospital_room')"><span class="rn"><span class="room-icon icon-room-double_hospital_room"></span>Double Hospital Room</span><span class="rp">$4,800</span><span class="rd">Needs: nurse + CNA</span></button>
   <button class="rb" data-tool="general_icu" data-desc="Needs: nurse + ER attending" onclick="sel('general_icu')"><span class="rn"><span class="room-icon icon-room-icu"></span>General ICU</span><span class="rp">$7,500</span><span class="rd">Needs: nurse + ER attending</span></button>
   <button class="rb" data-tool="cardiac_icu" data-desc="Needs: nurse + ER attending + dept. attending" onclick="sel('cardiac_icu')"><span class="rn"><span class="room-icon icon-room-cardiac-icu"></span>Cardiac ICU</span><span class="rp">$8,800</span><span class="rd">Needs: nurse + ER attending + dept. attending</span></button>
   <button class="rb" data-tool="lab" data-desc="Needs: dept. attending" onclick="sel('lab')"><span class="rn"><span class="room-icon">&#x1F9EA;</span>Lab</span><span class="rp">$2,800</span><span class="rd">Needs: dept. attending</span></button>
@@ -133,6 +131,26 @@
   <button class="rb" data-tool="geriatrics" data-desc="Needs: GP doctor + nurse + CNA senior care" onclick="sel('geriatrics')"><span class="rn"><span class="room-icon">&#x1F9D3;</span>Geriatrics</span><span class="rp">$3,400</span><span class="rd">Needs: GP doctor + nurse + CNA senior care</span></button>
   <button class="rb" data-tool="administration" data-desc="Needs: medical director + HR manager leadership" onclick="sel('administration')"><span class="rn"><span class="room-icon">&#x1F4CB;</span>Administration</span><span class="rp">$3,800</span><span class="rd">Needs: medical director + HR manager leadership</span></button>
   <button class="rb" data-tool="case_management" data-desc="Needs: clerical discharge and care coordination" onclick="sel('case_management')"><span class="rn"><span class="room-icon">&#x1F5C2;&#xFE0F;</span>Case Management</span><span class="rp">$2,600</span><span class="rd">Needs: clerical discharge and care coordination</span></button>
+  <button class="rb" data-tool="cosmetic_consult_office" data-desc="Needs: surgeon + clerical consult intake" onclick="sel('cosmetic_consult_office')"><span class="rn"><span class="room-icon">&#x1F484;</span>Cosmetic Consultation Office</span><span class="rp">$3,200</span><span class="rd">Needs: surgeon + clerical consult intake</span></button>
+  <button class="rb" data-tool="plastic_surgery_or" data-desc="Needs: surgeon + nurse cosmetic operating room" onclick="sel('plastic_surgery_or')"><span class="rn"><span class="room-icon">&#x1F489;</span>Plastic Surgery OR</span><span class="rp">$8,800</span><span class="rd">Needs: surgeon + nurse cosmetic operating room</span></button>
+  <button class="rb" data-tool="cosmetic_recovery_suite" data-desc="Needs: nurse + CNA post-op recovery" onclick="sel('cosmetic_recovery_suite')"><span class="rn"><span class="room-icon">&#x1F6CC;</span>Cosmetic Recovery Suite</span><span class="rp">$3,600</span><span class="rd">Needs: nurse + CNA post-op recovery</span></button>
+  <button class="rb" data-tool="aesthetic_procedure_room" data-desc="Needs: surgeon + nurse non-surgical aesthetics" onclick="sel('aesthetic_procedure_room')"><span class="rn"><span class="room-icon">&#x2728;</span>Aesthetic Procedure Room</span><span class="rp">$5,400</span><span class="rd">Needs: surgeon + nurse non-surgical aesthetics</span></button>
+  <button class="rb" data-tool="premium_waiting_lounge" data-desc="Needs: VIP/private patient waiting area" onclick="sel('premium_waiting_lounge')"><span class="rn"><span class="room-icon">&#x1F6CB;&#xFE0F;</span>Premium Waiting Lounge</span><span class="rp">$2,600</span><span class="rd">Needs: VIP/private patient waiting area</span></button>
+  <button class="rb" data-tool="student_health_clinic" data-desc="Needs: GP doctor + nurse + clerical campus intake" onclick="sel('student_health_clinic')"><span class="rn"><span class="room-icon">&#x1F393;</span>Student Health Clinic</span><span class="rp">$3,800</span><span class="rd">Needs: GP doctor + nurse + clerical campus intake</span></button>
+  <button class="rb" data-tool="counseling_center" data-desc="Needs: GP doctor + nurse student counseling" onclick="sel('counseling_center')"><span class="rn"><span class="room-icon">&#x1F5E3;&#xFE0F;</span>Counseling Center</span><span class="rp">$3,200</span><span class="rd">Needs: GP doctor + nurse student counseling</span></button>
+  <button class="rb" data-tool="sports_medicine_office" data-desc="Needs: GP doctor + nurse sports medicine" onclick="sel('sports_medicine_office')"><span class="rn"><span class="room-icon">&#x1F3C3;</span>Sports Medicine Office</span><span class="rp">$3,400</span><span class="rd">Needs: GP doctor + nurse sports medicine</span></button>
+  <button class="rb" data-tool="vaccination_clinic" data-desc="Needs: nurse + clerical vaccination drive" onclick="sel('vaccination_clinic')"><span class="rn"><span class="room-icon">&#x1F489;</span>Vaccination Clinic</span><span class="rp">$2,400</span><span class="rd">Needs: nurse + clerical vaccination drive</span></button>
+  <button class="rb" data-tool="teaching_intern_office" data-desc="Needs: intern training + mentorship" onclick="sel('teaching_intern_office')"><span class="rn"><span class="room-icon">&#x1F4DA;</span>Teaching/Intern Office</span><span class="rp">$2,800</span><span class="rd">Needs: intern training + mentorship</span></button>
+  <button class="rb" data-tool="donor_screening_office" data-desc="Needs: dept. attending + nurse donor screening" onclick="sel('donor_screening_office')"><span class="rn"><span class="room-icon">&#x1F9FE;</span>Donor Screening Office</span><span class="rp">$3,600</span><span class="rd">Needs: dept. attending + nurse donor screening</span></button>
+  <button class="rb" data-tool="cryogenic_storage" data-desc="Needs: dept. attending cryogenic preservation" onclick="sel('cryogenic_storage')"><span class="rn"><span class="room-icon">&#x1F9CA;</span>Cryogenic Storage Room</span><span class="rp">$6,800</span><span class="rd">Needs: dept. attending cryogenic preservation</span></button>
+  <button class="rb" data-tool="andrology_lab" data-desc="Needs: dept. attending + nurse andrology services" onclick="sel('andrology_lab')"><span class="rn"><span class="room-icon">&#x1F52C;</span>Andrology Lab</span><span class="rp">$5,400</span><span class="rd">Needs: dept. attending + nurse andrology services</span></button>
+  <button class="rb" data-tool="fertility_records_office" data-desc="Needs: clerical fertility records management" onclick="sel('fertility_records_office')"><span class="rn"><span class="room-icon">&#x1F4C1;</span>Fertility Records Office</span><span class="rp">$2,200</span><span class="rd">Needs: clerical fertility records management</span></button>
+  <button class="rb" data-tool="fertility_consult_office" data-desc="Needs: dept. attending + nurse fertility consult" onclick="sel('fertility_consult_office')"><span class="rn"><span class="room-icon">&#x1F4AC;</span>Fertility Consultation Office</span><span class="rp">$3,800</span><span class="rd">Needs: dept. attending + nurse fertility consult</span></button>
+  <button class="rb" data-tool="ivf_procedure_room" data-desc="Needs: surgeon + nurse IVF procedure room" onclick="sel('ivf_procedure_room')"><span class="rn"><span class="room-icon">&#x1F9EC;</span>IVF Procedure Room</span><span class="rp">$8,800</span><span class="rd">Needs: surgeon + nurse IVF procedure room</span></button>
+  <button class="rb" data-tool="embryology_lab_room" data-desc="Needs: dept. attending + nurse embryology lab" onclick="sel('embryology_lab_room')"><span class="rn"><span class="room-icon">&#x1F9EB;</span>Embryology Lab</span><span class="rp">$7,200</span><span class="rd">Needs: dept. attending + nurse embryology lab</span></button>
+  <button class="rb" data-tool="ivf_recovery_room" data-desc="Needs: nurse + CNA IVF recovery" onclick="sel('ivf_recovery_room')"><span class="rn"><span class="room-icon">&#x1F6CF;&#xFE0F;</span>IVF Recovery Room</span><span class="rp">$3,400</span><span class="rd">Needs: nurse + CNA IVF recovery</span></button>
+  <button class="rb" data-tool="prisoner_wing" data-desc="Stable corrections contract income; increases security pressure (Floor 1 only)" title="Stable corrections contract income; increases security pressure (Floor 1 only, unlock via Security Office or Guard)" onclick="sel('prisoner_wing')"><span class="rn"><span class="room-icon">&#x1F693;</span>Prisoner Treatment Wing</span><span class="rp">$9,200</span><span class="rd">Stable corrections contract income; increases security pressure</span></button>
+  <button class="rb" data-tool="auditorium" data-desc="Large event space — periodic conference cash + reputation; takes valuable first-floor space (Floor 1 only)" title="Large event space — periodic conference cash + reputation; takes valuable first-floor space (Floor 1 only)" onclick="sel('auditorium')"><span class="rn"><span class="room-icon">&#x1F3A4;</span>Auditorium / Conference Center</span><span class="rp">$11,800</span><span class="rd">Periodic conference cash &amp; reputation; takes valuable first-floor space</span></button>
   <div class="sep"></div>
   <h2>Tools</h2>
   <button class="rb" data-tool="demolish" data-desc="Remove tile/room" onclick="sel('demolish')"><span class="rn" style="color:var(--color-text-danger)"><span class="room-icon">&#x1F5D1;</span>Demolish</span><span class="rd">Remove tile/room</span></button>
@@ -140,24 +158,38 @@
 <div id="cw">
   <canvas id="c"></canvas>
   <div id="tt"></div>
-  <div id="mapbottommeta">
-    <div class="map-meta-card map-stage-card">
-      <span class="map-meta-label">Stage</span>
-      <span class="stage-badge" id="stagebadge">Clinic</span>
+  <div id="mapfloatctrl" class="map-float-ctrl">
+    <div class="floor-control vertical" id="floorctrl">
+      <button class="floor-step" id="floorup" type="button" aria-label="Next floor" onclick="nudgeFloor(1)">&#9650;</button>
+      <div class="floor-copy">
+        <span class="floor-label" id="floorlabel">Floor 1</span>
+        <span class="floor-meta" id="floormeta">1/10</span>
+      </div>
+      <button class="floor-step" id="floordown" type="button" aria-label="Previous floor" onclick="nudgeFloor(-1)">&#9660;</button>
     </div>
-    <label class="map-meta-card map-center-card" for="custom-center-name">
-      <span class="map-meta-label">Center Name</span>
-      <input id="custom-center-name" class="subbrand-input map-center-input" type="text" maxlength="40" value="Community Hospital Management Sim" placeholder="Enter your hospital name" oninput="updateCustomCenterName(this.value)" onkeydown="handleCenterNameKeydown(event)">
-    </label>
+    <div class="zoom-control vertical" id="topzoom">
+      <span class="zoom-label">Zoom</span>
+      <button class="zoom-step" type="button" aria-label="Zoom in" onclick="nudgeZoom(1)"><span class="zoom-step-icon">&#10010;</span></button>
+      <input id="zoomslider" class="slider-track slider-thumb" type="range" min="80" max="160" step="20" value="100" oninput="setZoomFromSlider(this.value)" orient="vertical" style="writing-mode:bt-lr;-webkit-appearance:slider-vertical;height:90px;width:24px;">
+      <button class="zoom-step" type="button" aria-label="Zoom out" onclick="nudgeZoom(-1)"><span class="zoom-step-icon">&#8722;</span></button>
+      <span class="zoom-value" id="zoomlabel"><span id="zoompct">100%</span><span class="zoom-context" id="zoomcontext" style="display:none">Default</span></span>
+    </div>
+    <button class="sb map-float-btn" id="rotatebtn" type="button" onclick="rotateBuildTool()" title="Rotate build tool">&#x21BB; Rotate</button>
+    <button class="sb map-float-btn" id="heatmapbtn2" type="button" onclick="toggleHeatmap()" title="Traffic heatmap">&#x1F4CA; Heatmap</button>
   </div>
   <div id="maptoolrow">
+    <button class="map-tool-btn bottom-bar-btn" id="statsbtn" type="button" onclick="openStats()" title="Hospital Statistics — detailed performance metrics and history">📊 Stats</button>
     <button class="map-tool-btn bottom-bar-btn" id="patchbtn" type="button" onclick="openPatchNotesMenu('patch')">Patch Notes</button>
-    <button class="map-tool-btn bottom-bar-btn" id="researchbtn" type="button" onclick="openResearchMenu()">Research</button>
-    <button class="map-tool-btn bottom-bar-btn" id="contractbtn" type="button" onclick="openContractMenu()">Contracts</button>
-    <button class="map-tool-btn bottom-bar-btn" id="employeebtn" type="button" onclick="openEmployeeMenu()">Employees</button>
-    <button class="map-tool-btn bottom-bar-btn" id="staffbtn" type="button" onclick="openStaff()">+ Staff</button>
+    <button class="map-tool-btn bottom-bar-btn" id="deptbtn" type="button" onclick="openDeptMenu()" title="Department Upgrades — improve whole systems like ER, Diagnostics, Operations, and Admin without micromanaging rooms">🏢 Depts</button>
+    <button class="map-tool-btn bottom-bar-btn" id="researchbtn" type="button" onclick="openResearchMenu()" title="Research Tree — unlock clinical, diagnostic, operational, digital, and access improvements permanently">Research</button>
+    <button class="map-tool-btn bottom-bar-btn" id="grantbtn" type="button" onclick="openGrantMenu()" title="Grants — apply for public funding to expand infrastructure, staffing, and public care. Hiring a Grant Writer improves approval odds">📝 Grants</button>
+    <button class="map-tool-btn bottom-bar-btn" id="contractbtn" type="button" onclick="openContractMenu()" title="Insurance Contracts — increase patient volume and revenue, but also raise pressure on waiting rooms, staff, and the government quota">Contracts</button>
+    <button class="map-tool-btn bottom-bar-btn" id="executivebtn" type="button" onclick="openExecutiveModal()" title="Executive Leadership — hire a CEO and up to 5 board members to unlock strategic bonuses">🏢 Executives<span class="exec-legacy-badge hidden" id="execlegacybadge" aria-label="CEO fully adapted — legacy events active">★</span></button>
+    <button class="map-tool-btn bottom-bar-btn" id="delegationbtn" type="button" onclick="openDelegationPanel()" title="Automation and Delegation — research-unlocked roles that run hospital policies in the background automatically">⚙️ Delegation</button>
+    <button class="map-tool-btn bottom-bar-btn" id="employeebtn" type="button" onclick="openEmployeeMenu()" title="Employee Panel — view staff morale, burnout risk, quit likelihood, and manage salaries and raises">Employees</button>
+    <button class="map-tool-btn bottom-bar-btn" id="staffbtn" type="button" onclick="openStaff()" title="Hire Staff — add doctors, nurses, clerks, janitors, grant writers, and specialists. Rooms need matching staff roles to operate">+ Staff</button>
     <button id="floorpaneltoggle" class="floor-panel-toggle bottom-bar-btn hidden" type="button" onclick="showFloorPanel()">Floors</button>
-    <button class="map-tool-btn bottom-bar-btn" id="heatmapbtn" type="button" onclick="toggleHeatmap()">Traffic</button>
+    <button class="map-tool-btn bottom-bar-btn" id="heatmapbtn" type="button" onclick="toggleHeatmap()" title="Traffic Heatmap — see where patients move and where bottlenecks and congestion form">Traffic</button>
   </div>
   <div id="softguide" class="soft-guide hidden">
     <div class="soft-guide-head">
@@ -179,13 +211,14 @@
       <div id="floor-switch-list" class="floor-switch-list"></div>
       <div class="floor-specialization-panel">
         <div class="floor-specialization-title">Specialty</div>
-        <div class="floor-specialization-current" id="floor-specialization-current">General</div>
+        <div class="floor-specialization-current" id="floor-specialization-current">Unchosen</div>
         <div id="floor-specialization-list" class="floor-specialization-list"></div>
       </div>
     </div>
   </div>
   <div id="heatmaplegend" class="heatmap-legend hidden">
     <div class="heatmap-legend-title">Traffic</div>
+    <div class="heatmap-legend-desc">Highlights bottlenecks and congestion in patient movement so you can widen corridors, add rooms, or hire more staff where it matters.</div>
     <div class="heatmap-legend-row"><span class="heatmap-swatch strong"></span><span>Green: smooth</span></div>
     <div class="heatmap-legend-row"><span class="heatmap-swatch okay"></span><span>Yellow: busy</span></div>
     <div class="heatmap-legend-row"><span class="heatmap-swatch struggle"></span><span>Orange: congested</span></div>
@@ -204,6 +237,7 @@
       <div class="room-panel-metric">
         <div class="room-panel-label">Efficiency</div>
         <div class="room-panel-value" id="roompanel-efficiency">82%</div>
+        <div class="room-panel-efficiency-breakdown" id="roompanel-efficiency-breakdown"></div>
       </div>
       <div class="room-panel-metric">
         <div class="room-panel-label">Throughput</div>
@@ -228,23 +262,156 @@
     </div>
   </div>
   <div id="titlescreen">
-    <div id="titlebox">
-      <img class="title-logo" src="assets/my-medical-center-logo.svg" alt="My Medical Center logo">
-      <h2>My Medical Center</h2>
-      <div class="title-subtitle">Build. Manage. Grow.</div>
-      <p class="title-copy">Start as a clinic and grow into a full medical center.</p>
-      <div class="title-actions">
-        <button class="title-btn primary" onclick="startGame()"><span class="title-btn-main">Start Game</span><span class="title-btn-sub">Begin career mode</span></button>
-        <button class="title-btn secondary" onclick="beginTutorial()"><span class="title-btn-main">Start Tutorial</span><span class="title-btn-sub">Learn the basic hospital loop</span></button>
-        <button class="title-btn secondary" onclick="loadGame()"><span class="title-btn-main">Load Save</span><span class="title-btn-sub">Continue your hospital</span></button>
-        <button class="title-btn secondary" onclick="openPatchNotesMenu('patch')"><span class="title-btn-main">Patch Notes</span><span class="title-btn-sub">View updates and devlog</span></button>
-        <button class="title-btn save-action" onclick="saveGame()"><span class="title-btn-main">Save Game</span><span class="title-btn-sub">Store your current hospital</span></button>
-        <button class="title-btn sandbox" onclick="startSandboxMode()"><span class="title-btn-main">Sandbox Mode</span><span class="title-btn-sub">Build freely with everything unlocked</span></button>
-        <button class="title-btn warning" onclick="restartGame()"><span class="title-btn-main">Restart Run</span><span class="title-btn-sub">Start over</span></button>
-        <button class="title-btn secondary hidden" id="backtogamebtn" onclick="backToGame()"><span class="title-btn-main">Back to Game</span><span class="title-btn-sub">Return to current hospital</span></button>
+    <div class="title-bg" aria-hidden="true">
+      <img class="title-bg-image" src="assets/title-background.png" alt="">
+      <div class="title-bg-tint"></div>
+    </div>
+
+    <button class="title-news-pill" type="button" onclick="openPatchNotesMenu('patch')" title="Patch notes &amp; devlog">
+      <span class="title-news-icon" aria-hidden="true">📰</span>
+      <span class="title-news-label">News</span>
+    </button>
+
+    <div class="title-content">
+    <div class="title-stage">
+      <div id="titlebox">
+        <div class="title-brand">
+          <img class="title-logo" src="assets/my-medical-center-logo-mark.svg" alt="">
+          <h2>My Medical<br>Center</h2>
+          <p class="title-subtitle">Build a world-renowned<br>medical center for Asherville.</p>
+        </div>
+        <div class="title-actions">
+          <div id="title-current-campus" class="title-current-campus hidden"></div>
+          <button class="title-menu-btn primary" id="backtogamebtn" type="button" onclick="continueFromTitle()">
+            <span class="title-menu-icon" aria-hidden="true">💾</span>
+            <span class="title-menu-label" id="title-continue-label">Continue</span>
+            <span class="title-menu-chev" aria-hidden="true">›</span>
+          </button>
+          <button class="title-menu-btn" type="button" onclick="openDifficultySelect()">
+            <span class="title-menu-icon" aria-hidden="true">📋</span>
+            <span class="title-menu-label">New Game</span>
+          </button>
+          <button class="title-menu-btn" type="button" onclick="loadGame()">
+            <span class="title-menu-icon" aria-hidden="true">📁</span>
+            <span class="title-menu-label">Load Game</span>
+          </button>
+          <button class="title-menu-btn" type="button" onclick="openSettings()">
+            <span class="title-menu-icon" aria-hidden="true">⚙️</span>
+            <span class="title-menu-label">Settings</span>
+          </button>
+          <button class="title-menu-btn danger" type="button" onclick="confirmQuitGame()">
+            <span class="title-menu-icon" aria-hidden="true">⏻</span>
+            <span class="title-menu-label">Quit</span>
+          </button>
+        </div>
+        <div class="title-secondary-actions">
+          <button class="title-link" type="button" onclick="beginTutorial()">Start Tutorial</button>
+          <span class="title-link-sep" aria-hidden="true">·</span>
+          <button class="title-link" type="button" onclick="importSaveFile()">Import Save File</button>
+        </div>
+      </div>
+
+      <div id="title-challenge-card">
+        <div class="title-challenge-eyebrow">CHOOSE YOUR CHALLENGE</div>
+        <div id="title-challenge-list"></div>
+      </div>
+    </div>
+
+    <div class="title-bottom-row">
+    <div class="title-tagline-card">
+      <div class="title-tagline-img" aria-hidden="true">
+        <svg viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="tagSky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#bfe2f5"/><stop offset="1" stop-color="#e8f4fb"/></linearGradient>
+            <linearGradient id="tagHill" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#9bc8a3"/><stop offset="1" stop-color="#6da775"/></linearGradient>
+          </defs>
+          <rect width="80" height="80" rx="14" fill="url(#tagSky)"/>
+          <path d="M0 56 Q18 40 34 50 T80 46 V80 H0 Z" fill="url(#tagHill)"/>
+          <path d="M0 64 Q22 56 42 62 T80 60 V80 H0 Z" fill="#5e9e63" opacity="0.7"/>
+          <path d="M28 38 Q40 26 56 30 Q66 32 70 22" stroke="#7fb6ce" stroke-width="2" fill="none" stroke-linecap="round"/>
+        </svg>
+      </div>
+      <p class="title-tagline-text"><span>Private care keeps the lights on.</span><br><b>Public care keeps the land.</b></p>
+      <div class="title-tagline-heart" aria-hidden="true">💙</div>
+    </div>
+    </div>
+
+    <div class="title-footer">
+      <div class="title-footer-left" id="title-footer-version">Version 1.26</div>
+      <div class="title-footer-center">© <span id="title-footer-year">2026</span> Asherville Studios <span class="title-footer-sep" aria-hidden="true">|</span> All rights reserved</div>
+      <div class="title-footer-right">
+        <a class="title-social" href="https://discord.gg/" target="_blank" rel="noopener noreferrer" title="Discord" aria-label="Discord">
+          <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path fill="currentColor" d="M19.27 5.33A17.4 17.4 0 0 0 14.92 4l-.21.42a13 13 0 0 0-2.42-.18 13 13 0 0 0-2.42.18L9.66 4a17.4 17.4 0 0 0-4.35 1.33A18 18 0 0 0 2 16.06a17.5 17.5 0 0 0 5.31 2.69l.43-.6c-.78-.27-1.51-.6-2.18-.99l.43-.34a12.5 12.5 0 0 0 12.02 0l.43.34c-.67.39-1.4.72-2.18.99l.43.6A17.5 17.5 0 0 0 22 16.06a18 18 0 0 0-2.73-10.73zM9.5 14.06c-.84 0-1.53-.78-1.53-1.74s.68-1.75 1.53-1.75 1.53.79 1.53 1.75-.69 1.74-1.53 1.74zm5 0c-.84 0-1.53-.78-1.53-1.74s.68-1.75 1.53-1.75 1.53.79 1.53 1.75-.69 1.74-1.53 1.74z"/></svg>
+        </a>
+        <a class="title-social" href="https://twitter.com/" target="_blank" rel="noopener noreferrer" title="Twitter" aria-label="Twitter">
+          <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path fill="currentColor" d="M22 5.92a8.2 8.2 0 0 1-2.36.65 4.12 4.12 0 0 0 1.81-2.27 8.22 8.22 0 0 1-2.6 1A4.1 4.1 0 0 0 11.85 9a11.65 11.65 0 0 1-8.45-4.28 4.1 4.1 0 0 0 1.27 5.47 4.07 4.07 0 0 1-1.86-.51v.05a4.1 4.1 0 0 0 3.29 4.02 4.1 4.1 0 0 1-1.85.07 4.1 4.1 0 0 0 3.83 2.85A8.23 8.23 0 0 1 2 18.4a11.62 11.62 0 0 0 6.29 1.84c7.55 0 11.68-6.25 11.68-11.67v-.53A8.32 8.32 0 0 0 22 5.92z"/></svg>
+        </a>
+        <a class="title-social" href="https://ashervillestudios.example.com/" target="_blank" rel="noopener noreferrer" title="Website" aria-label="Website">
+          <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path fill="currentColor" d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm6.93 6h-2.95a15.65 15.65 0 0 0-1.38-3.56A8.03 8.03 0 0 1 18.93 8zM12 4c.74.96 1.62 2.36 2.18 4H9.82C10.38 6.36 11.26 4.96 12 4zM4.26 14a7.92 7.92 0 0 1 0-4h3.38a17.6 17.6 0 0 0 0 4zm.81 2h2.95a15.65 15.65 0 0 0 1.38 3.56A8.03 8.03 0 0 1 5.07 16zm2.95-8H5.07a8.03 8.03 0 0 1 4.33-3.56A15.65 15.65 0 0 0 8.02 8zM12 20c-.74-.96-1.62-2.36-2.18-4h4.36c-.56 1.64-1.44 3.04-2.18 4zm2.6-6H9.4a15.6 15.6 0 0 1 0-4h5.2a15.6 15.6 0 0 1 0 4zm.02 5.56A15.65 15.65 0 0 0 15.98 16h2.95a8.03 8.03 0 0 1-4.33 3.56zM16.36 14a17.6 17.6 0 0 0 0-4h3.38a7.92 7.92 0 0 1 0 4z"/></svg>
+        </a>
+      </div>
+    </div>
+    </div>
+
+    <div id="difficulty-picker"></div>
+    <div id="campus-picker"></div>
+    <div id="newgame-finalize"></div>
+    <div id="save-drop-overlay" aria-hidden="true">
+      <div id="save-drop-overlay-inner">
+        <div class="save-drop-icon">📂</div>
+        <div class="save-drop-label">Drop your .mmcsave file to load</div>
       </div>
     </div>
   </div>
+  <script>
+    (function(){
+      var ts=document.getElementById('titlescreen');
+      var overlay=document.getElementById('save-drop-overlay');
+      var dragCount=0;
+      function isSaveFile(dt){
+        if(!dt||!dt.items)return false;
+        for(var i=0;i<dt.items.length;i++){
+          var item=dt.items[i];
+          if(item.kind==='file'){
+            var name=item.getAsFile()?.name||'';
+            if(name.endsWith('.mmcsave')||name.endsWith('.json'))return true;
+            if(item.type==='application/json'||item.type==='')return true;
+          }
+        }
+        return false;
+      }
+      document.addEventListener('dragenter',function(e){
+        if(!ts.classList.contains('hidden')&&isSaveFile(e.dataTransfer)){
+          dragCount++;
+          overlay.classList.add('active');
+          e.preventDefault();
+        }
+      });
+      document.addEventListener('dragleave',function(e){
+        if(!ts.classList.contains('hidden')){
+          dragCount--;
+          if(dragCount<=0){dragCount=0;overlay.classList.remove('active');}
+        }
+      });
+      document.addEventListener('dragover',function(e){
+        if(!ts.classList.contains('hidden')&&isSaveFile(e.dataTransfer)){
+          e.preventDefault();
+          e.dataTransfer.dropEffect='copy';
+        }
+      });
+      document.addEventListener('drop',function(e){
+        if(!ts.classList.contains('hidden')){
+          dragCount=0;
+          overlay.classList.remove('active');
+          var files=e.dataTransfer?.files;
+          if(files&&files.length>0){
+            e.preventDefault();
+            if(typeof loadFromFile==='function')loadFromFile(files[0]);
+          }
+        }
+      });
+    })();
+  </script>
   <div id="gameover">
     <div id="gameoverbox">
       <h3 id="gameovertitle">Hospital Closed</h3>
@@ -267,6 +434,7 @@
   </div>
   <div id="stagemodal">
     <div id="stagebox">
+      <button class="modal-close" type="button" aria-label="Close stage notice" onclick="closeStageModal()">Close</button>
       <div class="eyebrow">Stage Advanced</div>
       <h3 id="stage-title">Your clinic has grown!</h3>
       <div id="stage-name" class="stage-modal-name">Small Hospital</div>
@@ -277,12 +445,59 @@
       </div>
     </div>
   </div>
+  <div id="executivemodal">
+    <div id="executivebox">
+      <button class="modal-close" onclick="closeExecutiveModal()">Close</button>
+      <div class="modal-kicker">Hospital Leadership</div>
+      <h3>Executive Leadership</h3>
+      <p class="modal-subtitle">Hire one CEO and up to five board members for hospital-wide bonuses. CEOs adapt before bonuses fully apply; board members trade strong bonuses for drawbacks.</p>
+      <div id="executive-panel"></div>
+    </div>
+  </div>
+  <div id="renomodal" class="modal-overlay" style="display:none;">
+    <div id="renobox" class="modal-card" role="dialog" aria-modal="true" aria-labelledby="renomodal-title">
+      <button class="modal-close" type="button" onclick="closeRenovationConfirmModal()">Close</button>
+      <div class="modal-kicker">Renovation Required</div>
+      <h3 id="renomodal-title">Start Renovation?</h3>
+      <p class="modal-subtitle" id="renomodal-subtitle"></p>
+      <div id="renomodal-actions" style="display:flex;gap:10px;justify-content:flex-end;margin-top:14px;">
+        <button type="button" class="mb" onclick="closeRenovationConfirmModal()">Cancel</button>
+        <button type="button" class="mb" id="renomodal-confirm" style="background:#b85a5a;color:#fff;">Start Renovation</button>
+      </div>
+    </div>
+  </div>
+  <div id="floorspecmodal">
+    <div id="floorspecbox">
+      <button class="modal-close" id="floorspecmodal-close" onclick="closeFloorSpecModal()">Close</button>
+      <div class="modal-kicker">Floor Specialization</div>
+      <h3 id="floorspecmodal-title">Choose a Specialization</h3>
+      <p class="modal-subtitle" id="floorspecmodal-subtitle">Specialization shapes which rooms you can build here and adds passive bonuses (and drawbacks) hospital-wide. Stacking the same specialization on multiple floors yields diminishing returns.</p>
+      <div id="floorspec-content"></div>
+    </div>
+  </div>
+  <div id="delegationmodal">
+    <div id="delegationbox">
+      <button class="modal-close" onclick="closeDelegationPanel()">Close</button>
+      <div class="modal-kicker">Hospital Operations</div>
+      <h3>Delegation &amp; Automation</h3>
+      <p class="modal-subtitle">Research-unlocked roles run policies in the background — auto-hire, auto-train, auto-clean, and stress relief. Active roles reduce daily friction without manual input.</p>
+      <div id="delegation-summary" class="del-summary"></div>
+      <div id="delegation-content" class="del-grid"></div>
+    </div>
+  </div>
   <div id="staffmodal">
     <div id="staffbox">
       <button class="modal-close" onclick="closeStaff()">Close</button>
       <div class="modal-kicker">Team Management</div>
       <h3 id="modal-title">Hire Staff</h3>
+      <p class="modal-subtitle">Hire doctors, nurses, clerks, janitors, grant writers, and specialists. Each role staffs a matching room or runs a hospital system. Search by trait to find the right fit.</p>
       <div id="staff-actions" class="staff-actions"></div>
+      <div class="staff-search-wrap">
+        <span class="staff-search-icon">🔍</span>
+        <input id="staff-search-input" type="text" class="staff-search-input" placeholder="Search by trait — Spill Psychic, mentor, fast, error…" oninput="setStaffTraitFilter(this.value)" autocomplete="off" />
+        <button class="staff-search-clear" id="staff-search-clear" onclick="setStaffTraitFilter('');document.getElementById('staff-search-input').value='';" style="display:none">✕ Clear</button>
+      </div>
+      <div id="staff-search-status" class="staff-search-status"></div>
       <div id="staff-requests" class="request-list"></div>
       <div id="staff-current" class="staff-current"></div>
       <div id="staff-tabs" style="display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap"></div>
@@ -294,14 +509,34 @@
       <button class="modal-close" onclick="closeEmployeeMenu()">Close</button>
       <div class="modal-kicker">Employee Management</div>
       <h3>Employees &amp; Needs</h3>
+      <p class="modal-subtitle">Track morale, burnout risk, raise demands, and quit risk for everyone you have already hired. Catch warnings early before resignations.</p>
       <div id="employee-current" class="staff-current"></div>
+    </div>
+  </div>
+  <div id="deptmodal">
+    <div id="deptbox">
+      <button class="modal-close" onclick="closeDeptMenu()">Close</button>
+      <div class="modal-kicker">Hospital Management</div>
+      <h3>Department Upgrades</h3>
+      <p class="modal-subtitle">Improve whole systems at once — ER throughput, diagnostics speed, admin grant odds, IT uptime, operations efficiency — without touching individual rooms.</p>
+      <div id="deptpanel"></div>
+    </div>
+  </div>
+  <div id="grantmodal">
+    <div id="grantbox">
+      <button class="modal-close" onclick="closeGrantMenu()">Close</button>
+      <div class="modal-kicker">Hospital Administration</div>
+      <h3>Grant Program</h3>
+      <p class="modal-subtitle">Apply for government, medical, workforce, and infrastructure grants. Hiring a Grant Writer raises approval odds. Reviews take time, so apply early. Risky grants can still be denied — and overpromise grants can claw back funds at expiry if stress, cleanliness, or the public-care quota slipped.</p>
+      <div id="grantpanel"></div>
     </div>
   </div>
   <div id="researchmodal">
     <div id="researchbox">
       <button class="modal-close" onclick="closeResearchMenu()">Close</button>
-      <div class="modal-kicker">Research Lab</div>
-      <h3>Research</h3>
+      <div class="modal-kicker">Research &amp; Development</div>
+      <h3>Research Tree</h3>
+      <p class="modal-subtitle">Permanently shape how the hospital operates. Six branches — Clinical, Diagnostics, Operations, Administration, Digital, and Access — plus an Identity layer for long-term direction.</p>
       <div id="researchpanel"></div>
     </div>
   </div>
@@ -310,19 +545,99 @@
       <button class="modal-close" onclick="closeContractMenu()">Close</button>
       <div class="modal-kicker">Hospital Administration</div>
       <h3>Contracts</h3>
+      <p class="modal-subtitle">Active and available insurance contracts plus the Asherville Public Care Agreement. More volume and revenue, more pressure on quotas, staff, and waiting rooms. Each private contract adds compliance pressure that raises the effective public-care threshold at each monthly review — stack carefully.</p>
       <div id="contractpanel"></div>
     </div>
   </div>
   <div id="patchmodal">
     <div id="patchbox">
+      <button class="modal-close patch-inline-close" type="button" aria-label="Close patch notes" onclick="closePatchNotesMenu()">Close</button>
       <div class="modal-kicker">Hospital Archive</div>
       <h3>Patch Notes &amp; Devlog</h3>
       <div class="patch-tabs">
         <button class="patch-tab active" id="patchtab-patch" type="button" onclick="setPatchNotesTab('patch')">Patch Notes</button>
         <button class="patch-tab" id="patchtab-devlog" type="button" onclick="setPatchNotesTab('devlog')">Devlog</button>
-        <button class="modal-close patch-inline-close" type="button" aria-label="Close patch notes" onclick="closePatchNotesMenu()">Close</button>
       </div>
       <pre id="patchpanel" class="patch-panel"></pre>
+    </div>
+  </div>
+  <div id="settingsmodal">
+    <div id="settingsbox">
+      <button class="modal-close" onclick="closeSettings()">Close</button>
+      <div class="modal-kicker">Game Settings</div>
+      <h3>Settings</h3>
+      <div id="settings-panel"></div>
+    </div>
+  </div>
+  <div id="statsmodal">
+    <div id="statsbox">
+      <button class="modal-close" onclick="closeStats()">Close</button>
+      <div class="modal-kicker">Hospital Performance</div>
+      <h3>Hospital Snapshot &amp; Statistics</h3>
+      <p class="modal-subtitle">Live stat grid, current pressure dashboard, and 90 days of trends for cash, revenue, reputation, cleanliness, staff stress, and patients treated.</p>
+      <div id="statsgrid">
+        <div class="ic stat-rcash" data-tt-stat="money"><div class="lbl">Money</div><div class="val" id="rmoney">$500,000</div></div>
+        <div class="ic">
+          <div class="lbl">Stage</div>
+          <div class="val" id="rstage">Clinic</div>
+          <div class="sub" id="rstagewarn">Keep building reputation and hit milestones to grow.</div>
+          <div class="stage-progress-wrap">
+            <div class="stage-next" id="stage-next">Next Stage: Small Hospital</div>
+            <div class="stage-bar"><div class="stage-bar-fill" id="stage-bar-fill"></div></div>
+            <div class="stage-reqs" id="stage-reqs"></div>
+          </div>
+        </div>
+        <div class="ic stat-rrp" data-tt-stat="rp"><div class="lbl">RP</div><div class="val" id="rpoints">0</div><div class="sub">Base +1/day, with extra RP from IT, Dept. Head Office, Medical Director, and Mentor/Learner bonuses.</div></div>
+        <div class="ic" data-tt-stat="grade"><div class="lbl">Inspection grade</div><div class="val" id="rgrade">A+</div><div class="sub" id="rgradewarn">Monthly inspectors are fully satisfied</div></div>
+        <div class="ic stat-rrep" data-tt-stat="reputation"><div class="lbl">Reputation</div><div class="val" id="rrep">70</div><div class="sub" id="rrepwarn">Stable standing</div></div>
+        <div class="ic stat-rclean" data-tt-stat="cleanliness"><div class="lbl">Cleanliness</div><div class="val" id="rclean">78%</div><div class="sub" id="rcleanwarn">Hire janitors to keep wards safe</div></div>
+        <div class="ic stat-rwait" data-tt-stat="waiting"><div class="lbl">People waiting</div><div class="val" id="rwaiting">0</div><div class="sub" id="rwaitingwarn">A waiting room keeps queues under control</div></div>
+        <div class="ic stat-rstaff" data-tt-stat="nursecov"><div class="lbl">Nurse coverage</div><div class="val" id="rnursecov">0 / 0</div><div class="sub" id="rnursecovwarn">Need 1 nurse per 4 rooms on the active shift</div></div>
+        <div class="ic stat-rstaff" data-tt-stat="cnacov"><div class="lbl">CNA coverage</div><div class="val" id="rcnacov">0 / 0</div><div class="sub" id="rcnacovwarn">Need 1 CNA per 2 office rooms on the active shift</div></div>
+        <div class="ic"><div class="lbl">Monthly income</div><div class="val" id="rincome">$0</div></div>
+        <div class="ic"><div class="lbl">Wage bill/mo</div><div class="val" id="rwages">$0</div></div>
+        <div class="ic" data-tt-stat="debt"><div class="lbl">Debt watch</div><div class="val" id="rdebt">0 days</div><div class="sub" id="rdebtwarn">Days in debt trigger closure (varies by difficulty)</div></div>
+        <div class="ic"><div class="lbl">Treated</div><div class="val" id="rtreated">0</div><div class="sub">Goal: 50 patients</div></div>
+      </div>
+      <div id="pressure-dashboard"></div>
+      <div id="stats-panel"></div>
+    </div>
+  </div>
+  <div id="budgetmodal">
+    <div id="budgetbox">
+      <button class="modal-close" onclick="closeBudgetMenu()">Close</button>
+      <div class="modal-kicker">Hospital Finance</div>
+      <h3>Budget</h3>
+      <p class="modal-subtitle">Monthly income vs expenses, wage bill, and debt watch. Sustained debt triggers closure — the exact day count depends on the chosen difficulty. Apply for a grant or sign a contract before reaching the limit.</p>
+      <div id="budgetpanel"></div>
+    </div>
+  </div>
+  <div id="marketingmodal">
+    <div id="marketingbox">
+      <button class="modal-close" onclick="closeMarketingMenu()">Close</button>
+      <div class="modal-kicker">Hospital Outreach</div>
+      <h3>Marketing</h3>
+      <p class="modal-subtitle">Run advertising campaigns to bring more patients to the hospital. Build and staff a Marketing Office to unlock paid campaigns.</p>
+      <div id="marketingsummary"></div>
+      <button class="panel-btn" id="advertbtn" onclick="buyAdvertising()">Launch Campaign</button>
+    </div>
+  </div>
+  <div id="rostermodal">
+    <div id="rosterbox">
+      <button class="modal-close" onclick="closeRosterMenu()">Close</button>
+      <div class="modal-kicker">Hospital Personnel</div>
+      <h3>Hired Staff Roster</h3>
+      <p class="modal-subtitle">Quick view of everyone on payroll, with shift counts, pending raise requests, and top role coverage. Open the Staff Manager to hire, fire, or filter candidates.</p>
+      <div id="hiredstaffmenu"></div>
+    </div>
+  </div>
+  <div id="dispatchmodal">
+    <div id="dispatchbox">
+      <button class="modal-close" onclick="closeDispatchMenu()">Close</button>
+      <div class="modal-kicker">Ambulance Operations</div>
+      <h3>Dispatch Jobs</h3>
+      <p class="modal-subtitle">Active and incoming transport jobs. Build a Dispatch Office and Ambulance Bay, then hire dispatchers and drivers to take on calls.</p>
+      <div id="dispatchjobs"></div>
     </div>
   </div>
   <div id="event-modal" class="event-modal hidden">
@@ -344,8 +659,9 @@
     </div>
   </div>
   <div id="tutorialcard" class="tutorial-card hidden">
+    <button class="modal-close" type="button" aria-label="Close tutorial" onclick="skipTutorial()">Close</button>
     <div class="tutorial-kicker" data-tutorial-drag="true">Tutorial</div>
-    <div class="tutorial-progress" id="tutorial-progress">Step 1 / 8</div>
+    <div class="tutorial-progress" id="tutorial-progress">Step 1 / 18</div>
     <div class="tutorial-title" id="tutorial-title">Welcome</div>
     <div class="tutorial-text" id="tutorial-text"></div>
     <div class="tutorial-goal" id="tutorial-goal"></div>
@@ -356,6 +672,19 @@
   </div>
 </div>
 <div id="rp">
+  <div id="rp-launchers" class="rp-launchers">
+    <button class="rp-launcher" type="button" onclick="openStats()" title="Hospital Snapshot, pressure dashboard, and 90-day trends">📊 Snapshot<span class="rp-badge hidden" id="badge-stats"></span></button>
+    <button class="rp-launcher" type="button" onclick="openBudgetMenu()" title="Monthly income, expenses, wages, and debt watch">💰 Budget<span class="rp-badge hidden" id="badge-budget"></span></button>
+    <button class="rp-launcher" type="button" onclick="openDeptMenu()" title="Department upgrades">🏢 Departments<span class="rp-badge hidden" id="badge-dept"></span></button>
+    <button class="rp-launcher" type="button" onclick="openRosterMenu()" title="Hired staff roster &amp; raise requests">👥 Roster<span class="rp-badge hidden" id="badge-roster"></span></button>
+    <button class="rp-launcher" type="button" onclick="openDispatchMenu()" title="Ambulance dispatch jobs">🚑 Dispatch<span class="rp-badge hidden" id="badge-dispatch"></span></button>
+    <button class="rp-launcher" type="button" onclick="openContractMenu()" title="Insurance contracts &amp; the public care agreement">📑 Contracts<span class="rp-badge hidden" id="badge-contracts"></span></button>
+    <button class="rp-launcher" type="button" onclick="openInsuranceMenu()" title="Insurance contracts">🛡️ Insurance<span class="rp-badge hidden" id="badge-insurance"></span></button>
+    <button class="rp-launcher" type="button" onclick="openMarketingMenu()" title="Marketing campaigns">📣 Marketing<span class="rp-badge hidden" id="badge-marketing"></span></button>
+    <button class="rp-launcher" type="button" onclick="openGrantMenu()" title="Government and community grants">📝 Grants<span class="rp-badge hidden" id="badge-grants"></span></button>
+    <button class="rp-launcher" type="button" onclick="openResearchMenu()" title="Research lab">🔬 Research<span class="rp-badge hidden" id="badge-research"></span></button>
+    <button class="rp-launcher" type="button" onclick="openResearchMenu()" title="Browse the tech tree (inside the Research Lab)">🌐 Tech Tree<span class="rp-badge hidden" id="badge-tech"></span></button>
+  </div>
   <details class="menu-panel" open>
     <summary>Warnings</summary>
     <div class="menu-panel-body">
@@ -363,131 +692,70 @@
     </div>
   </details>
   <details class="menu-panel" open>
-    <summary>Goals</summary>
+    <summary>Current Goal</summary>
     <div class="menu-panel-body">
       <div id="stagegoals"></div>
       <div id="dailygoal"></div>
       <div id="milestones"></div>
+      <div id="advisor-card" class="advisor-card" hidden></div>
+      <div id="bottleneck-card" class="bottleneck-card" hidden></div>
+      <div id="traffic-card" class="traffic-card" hidden></div>
     </div>
   </details>
-  <details class="menu-panel">
+  <details class="menu-panel" open>
+    <summary>Asherville Public Care Agreement</summary>
+    <div class="menu-panel-body">
+      <div id="gov-contract" class="ic gov-card" data-tt-publiccare="1" tabindex="0">
+        <div class="gov-card-header">
+          <span class="gov-card-icon" aria-hidden="true">🏗️</span>
+          <span class="gov-card-title">Asherville Public Care Agreement</span>
+        </div>
+        <div class="gov-card-meter-wrap">
+          <div class="gov-card-meter" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+            <div class="gov-card-meter-fill ic-gm-ok" id="govBarFill" style="width:0%"></div>
+            <div class="gov-card-meter-req" id="govBarReq" style="left:100%" title="Required target"></div>
+          </div>
+          <div class="gov-card-meter-labels">
+            <span><b id="govCurrent">0%</b> public</span>
+            <span>Target: <b id="govQuota">35%</b></span>
+          </div>
+          <div class="gov-card-pressure-hint ic-gov-pressure-warn ic-gov-pressure-warn--compact" id="govPressureHint" hidden></div>
+        </div>
+        <div class="gov-card-footer">
+          <span class="gov-card-status ic-gov-status ic-gov-status--idle" id="govStatus">Monitoring</span>
+          <span class="gov-card-review" id="govPenalty">Next Review: 30 days</span>
+        </div>
+        <div class="gov-card-consequence" id="govConsequence">Hit the public-care target to keep the city's grant flowing.</div>
+      </div>
+    </div>
+  </details>
+  <details class="menu-panel" open>
     <summary>Log</summary>
     <div class="menu-panel-body">
       <div id="log"></div>
     </div>
   </details>
-  <details class="menu-panel" open>
-    <summary>Stats</summary>
-    <div class="menu-panel-body">
-      <div id="statsgrid">
-        <div class="ic stat-rcash"><div class="lbl">Money</div><div class="val" id="rmoney">$500,000</div></div>
-        <div class="ic">
-          <div class="lbl">Stage</div>
-          <div class="val" id="rstage">Clinic</div>
-          <div class="sub" id="rstagewarn">Keep building reputation and hit milestones to grow.</div>
-          <div class="stage-progress-wrap">
-            <div class="stage-next" id="stage-next">Next Stage: Small Hospital</div>
-            <div class="stage-bar"><div class="stage-bar-fill" id="stage-bar-fill"></div></div>
-            <div class="stage-reqs" id="stage-reqs"></div>
-          </div>
-        </div>
-        <div class="ic stat-rrp"><div class="lbl">RP</div><div class="val" id="rpoints">0</div><div class="sub">Base +1/day, with extra RP from IT, Dept. Head Office, Medical Director, and Mentor/Learner bonuses.</div></div>
-        <div class="ic"><div class="lbl">Inspection grade</div><div class="val" id="rgrade">A+</div><div class="sub" id="rgradewarn">Monthly inspectors are fully satisfied</div></div>
-        <div class="ic stat-rrep"><div class="lbl">Reputation</div><div class="val" id="rrep">70</div><div class="sub" id="rrepwarn">Stable standing</div></div>
-        <div id="gov-contract" class="ic">
-          <div class="lbl">Government Contract</div>
-          <div class="val" id="govQuota">35% Required</div>
-          <div class="sub">
-            Public Patients Treated: <b id="govCurrent">0%</b>
-          </div>
-          <div class="sub" id="govStatus">
-            Status: Compliant
-          </div>
-          <div class="sub" id="govPenalty">
-            Next Review: 30 Days
-          </div>
-        </div>
-        <div class="ic stat-rclean"><div class="lbl">Cleanliness</div><div class="val" id="rclean">78%</div><div class="sub" id="rcleanwarn">Hire janitors to keep wards safe</div></div>
-        <div class="ic stat-rwait"><div class="lbl">People waiting</div><div class="val" id="rwaiting">0</div><div class="sub" id="rwaitingwarn">A waiting room keeps queues under control</div></div>
-        <div class="ic stat-rstaff"><div class="lbl">Nurse coverage</div><div class="val" id="rnursecov">0 / 0</div><div class="sub" id="rnursecovwarn">Need 1 nurse per 4 rooms on the active shift</div></div>
-        <div class="ic stat-rstaff"><div class="lbl">CNA coverage</div><div class="val" id="rcnacov">0 / 0</div><div class="sub" id="rcnacovwarn">Need 1 CNA per 2 office rooms on the active shift</div></div>
-        <div class="ic"><div class="lbl">Monthly income</div><div class="val" id="rincome">$0</div></div>
-        <div class="ic"><div class="lbl">Wage bill/mo</div><div class="val" id="rwages">$0</div></div>
-        <div class="ic"><div class="lbl">Debt watch</div><div class="val" id="rdebt">0 days</div><div class="sub">10 days in debt triggers closure</div></div>
-        <div class="ic"><div class="lbl">Treated</div><div class="val" id="rtreated">0</div><div class="sub">Goal: 50 patients</div></div>
-      </div>
-      <div id="pressure-dashboard"></div>
-    </div>
-  </details>
-  <details class="menu-panel" open>
-    <summary>Budget</summary>
-    <div class="menu-panel-body">
-      <div id="budgetpanel"></div>
-    </div>
-  </details>
-  <details class="menu-panel" open>
-    <summary>Departments</summary>
-    <div class="menu-panel-body">
-      <div id="departmentpanel"></div>
-    </div>
-  </details>
-  <details class="menu-panel" open>
-    <summary>Grants</summary>
-    <div class="menu-panel-body">
-      <div id="grantsummary"></div>
-    </div>
-  </details>
-  <details class="menu-panel">
-    <summary>Research</summary>
-    <div class="menu-panel-body">
-      <div id="researchsummary"></div>
-      <button class="panel-btn" onclick="openResearchMenu()">Open Research Menu</button>
-    </div>
-  </details>
-  <details class="menu-panel">
-    <summary>Tech Tree</summary>
-    <div class="menu-panel-body">
-      <div id="techtreepanel"></div>
-    </div>
-  </details>
-  <details class="menu-panel">
-    <summary>Insurance</summary>
-    <div class="menu-panel-body">
-      <div id="insurance-panel" class="ic">
-        <div class="lbl">Insurance Contracts</div>
-        <div id="insurance-list"></div>
-        <button class="panel-btn" type="button" onclick="openInsuranceMenu()">+ Add Contract</button>
-      </div>
-    </div>
-  </details>
-  <details class="menu-panel">
-    <summary>Marketing</summary>
-    <div class="menu-panel-body">
-      <div id="marketingsummary"></div>
-      <button class="panel-btn" id="advertbtn" onclick="buyAdvertising()">Launch Campaign</button>
-    </div>
-  </details>
-  <details class="menu-panel">
-    <summary>Contracts</summary>
-    <div class="menu-panel-body">
-      <div id="contracts"></div>
-    </div>
-  </details>
-  <details class="menu-panel">
-    <summary>Staff</summary>
-    <div class="menu-panel-body">
-      <div id="hiredstaffmenu"></div>
-    </div>
-  </details>
-  <details class="menu-panel">
-    <summary>Dispatch</summary>
-    <div class="menu-panel-body">
-      <div id="dispatchjobs"></div>
-    </div>
-  </details>
 </div>
 <div id="bot">
-  <span id="hint">Draw corridors first. Then place rooms. Open "+ Staff" to hire the roles your rooms need for the active shift.</span>
+  <div id="bottomdock" class="bottom-dock">
+    <div class="dock-slot">
+      <button class="dock-pill" id="dock-build" type="button" onclick="dockHandleBuild()" title="Toggle build mode and focus the build panel"><span class="dock-pill-icon">&#x1F527;</span><span class="dock-pill-label">Build</span></button>
+    </div>
+    <div class="dock-slot">
+      <button class="dock-pill" id="dock-people" type="button" onclick="dockToggleMenu('people',this)" title="Staff &amp; employees"><span class="dock-pill-icon">&#x1F465;</span><span class="dock-pill-label">People</span></button>
+    </div>
+    <div class="dock-slot">
+      <button class="dock-pill" id="dock-hospital" type="button" onclick="dockToggleMenu('hospital',this)" title="Hospital operations"><span class="dock-pill-icon">&#x1F3E5;</span><span class="dock-pill-label">Hospital</span></button>
+    </div>
+    <div class="dock-slot">
+      <button class="dock-pill" id="dock-management" type="button" onclick="dockToggleMenu('management',this)" title="Money &amp; leadership"><span class="dock-pill-icon">&#x1F4BC;</span><span class="dock-pill-label">Management</span></button>
+    </div>
+    <div class="dock-slot">
+      <button class="dock-pill" id="dock-reports" type="button" onclick="dockToggleMenu('reports',this)" title="Stats, logs and history"><span class="dock-pill-icon">&#x1F4CA;</span><span class="dock-pill-label">Reports</span></button>
+    </div>
+  </div>
+  <div id="dock-popup" class="dock-popup" hidden></div>
+  <span id="hint">Build corridors to connect rooms. Place a Waiting Room and GP Office, then hire staff. Check Warnings on the right — every warning includes a "→ Fix:" line.</span>
 </div>
 </div>
 <div id="toast-stack" aria-live="polite" aria-atomic="false"></div>
@@ -498,7 +766,16 @@
 <script src="systems/dispatch.js"></script>
 <script src="systems/research.js"></script>
 <script src="systems/contracts.js"></script>
+<script src="systems/grants.js"></script>
 <script src="game.js"></script>
+<script src="systems/departments.js"></script>
+<script src="systems/delegation.js"></script>
 <script src="systems/tutorial.js"></script>
+<script src="systems/advisor.js"></script>
+<script src="systems/bottlenecks.js"></script>
+<script src="systems/traffic.js"></script>
+<script src="systems/sound.js"></script>
+<script src="systems/anim_polish.js"></script>
+<script src="systems/tooltip.js"></script>
 </body>
 </html>

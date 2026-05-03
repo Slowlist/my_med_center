@@ -6,7 +6,7 @@ function serializeGame(){
       customCenterName,
       hospitalStage,
       money,day,score,totalTreated,researchPoints,monthlyInc,incAccum,reputation,cleanliness,stress,adReach,
-      floorGrids,floorSpecializations,floorPanelHidden,floorPanelPosition,currentFloor,grid,rooms,patients,staff,staffPool,logs,
+      floorGrids,floorSpecializations,floorSpecVersion:3,floorPanelHidden,floorPanelPosition,currentFloor,grid,rooms,patients,staff,staffPool,logs,
     selTool,gameTime,speed,paused,patId,staffId,zoom,buildMode,
     currentTab,debtDays,debtFreeDays,winStabilityDays,lowRepDays,dirtyDays,highStressDays,gameOver,loseReason,runOutcome,
     tutorialActive,tutorialStep,tutorialCompleted,
@@ -25,6 +25,7 @@ function serializeGame(){
     techTree,
     govRequired,govTreated,totalPatients,totalPublicCareTreated,
     recentAuditFailureDays,
+    specialtyServiceStats:typeof specialtyServiceStats!=='undefined'?specialtyServiceStats:undefined,
     grantOffers,
     contractOffer,activeContract,lastContractId,insuranceContracts,freeBuildCredits,
     dailyGoal,dailyStats,staffShiftFilter,eventStats,eventMemory
@@ -95,9 +96,9 @@ function loadGame(){
       floorGrids=Array.isArray(data.floorGrids)&&data.floorGrids.length
         ?data.floorGrids
         :Array.from({length:MAX_FLOORS},(_,idx)=>idx===0&&Array.isArray(data.grid)?data.grid:makeEmptyGrid());
-      floorSpecializations=data.floorSpecializations&&typeof data.floorSpecializations==='object'
-        ?{...makeFloorSpecializations(),...data.floorSpecializations}
-        :makeFloorSpecializations();
+      if(typeof migrateFloorSpecializations==='function'){
+        floorSpecializations=migrateFloorSpecializations(data.floorSpecializations,floorGrids,data.floorSpecVersion);
+      }
       floorPanelHidden=data.floorPanelHidden??true;
       floorPanelPosition=data.floorPanelPosition??null;
       currentFloor=data.currentFloor??1;
@@ -183,6 +184,19 @@ function loadGame(){
       complaints:data.eventStats?.complaints??0
     };
     eventMemory=data.eventMemory&&typeof data.eventMemory==='object'?data.eventMemory:{};
+    if(typeof specialtyServiceStats!=='undefined'){
+      const ss=data.specialtyServiceStats&&typeof data.specialtyServiceStats==='object'?data.specialtyServiceStats:{};
+      specialtyServiceStats={
+        cosmeticCases:ss.cosmeticCases??0,
+        studentVisits:ss.studentVisits??0,
+        spermDeposits:ss.spermDeposits??0,
+        ivfCycles:ss.ivfCycles??0,
+        ethicsReviews:ss.ethicsReviews??0,
+        complianceIncidents:ss.complianceIncidents??0,
+        cryoReliability:ss.cryoReliability??100,
+        universityContractActive:ss.universityContractActive??false
+      };
+    }
     if(typeof initializeEventMetadata==='function')initializeEventMetadata();
     if(typeof applySavedTutorialPreference==='function')applySavedTutorialPreference();
     hover={x:-1,y:-1};
@@ -429,7 +443,110 @@ const EVENTS=[
       updateUI();
     }}
   ]},
+  {id:'celebrity_cosmetic_case',m:'A celebrity is requesting a discreet cosmetic case at your Plastic Surgery OR.',kind:'positive',category:'opportunity',rarity:'rare',minStage:'medical',icon:'💎',title:'Celebrity Cosmetic Case',cooldownDays:14,
+   desc:'A high-profile celebrity has chosen your Plastic Surgery service line for a discreet elective case.',
+   impact:'<div>Large premium payout if accepted; reputation swing depending on the case outcome.</div>',
+   available:()=>typeof specialtyLineFullyOperational==='function'&&specialtyLineFullyOperational('cosmetic'),
+   choices:[
+    {label:'Accept Concierge Case',type:'primary',action:()=>{changeMoney(11000);reputation=clamp(reputation+8,0,100);stress=clamp(stress+5,0,100);if(typeof specialtyServiceStats!=='undefined')specialtyServiceStats.cosmeticCases=(specialtyServiceStats.cosmeticCases||0)+1;addLog('Celebrity Cosmetic Case accepted. Premium revenue and reputation gained.','g');showToast('Celebrity case accepted','good');updateUI();}},
+    {label:'Decline Quietly',type:'warn',action:()=>{reputation=clamp(reputation-3,0,100);addLog('Celebrity Cosmetic Case declined.','w');showToast('Celebrity case declined','warn');updateUI();}}
+  ]},
+  {id:'public_backlash_luxury_wing',m:'Public backlash is building over the hospital\u2019s luxury wing.',kind:'negative',category:'pressure',rarity:'uncommon',minStage:'medical',icon:'📰',title:'Public Backlash Over Luxury Wing',cooldownDays:18,
+   desc:'Media coverage is criticising the cosmetic / luxury wing for prioritising private patients while public-care compliance slips.',
+   impact:'<div>Reputation hit when public-care compliance is low.</div>',
+   available:()=>{
+     if(typeof specialtyLineFullyOperational!=='function'||!specialtyLineFullyOperational('cosmetic'))return false;
+     const rate=typeof getPublicCareRate==='function'?getPublicCareRate():0;
+     return rate<(typeof govRequired!=='undefined'?govRequired:0.5);
+   },
+   choices:[
+    {label:'Pledge Free Public Slots',type:'primary',action:()=>{changeMoney(-3500);reputation=clamp(reputation+3,0,100);addLog('Public backlash defused with a free-slots pledge for public-care patients.','g');showToast('Public-care pledge','good');updateUI();}},
+    {label:'Defend Private Wing',type:'danger',action:()=>{reputation=clamp(reputation-8,0,100);addLog('The luxury wing was defended publicly. Reputation took a hit.','b');showToast('Public backlash','warn');updateUI();}}
+  ]},
+  {id:'cryogenic_storage_failure',m:'A cryogenic storage alarm has fired in the fertility wing.',kind:'negative',category:'crisis',rarity:'uncommon',minStage:'medical',icon:'❄️',title:'Cryogenic Storage Failure',cooldownDays:16,
+   desc:'A liquid-nitrogen failure has been detected in the cryogenic storage room.',
+   impact:'<div>Larger penalty when cleanliness is weak or stress is high.</div>',
+   available:()=>{
+     if(typeof hasOperationalRoom!=='function'||!hasOperationalRoom('cryogenic_storage'))return false;
+     if(typeof specialtyLineFullyOperational!=='function')return false;
+     if(!specialtyLineFullyOperational('sperm_bank')&&!specialtyLineFullyOperational('ivf'))return false;
+     const recordsGap=!hasOperationalRoom('fertility_records_office');
+     const labGap=!hasOperationalRoom('andrology_lab')&&!hasOperationalRoom('embryology_lab_room');
+     const ethicsGap=!researchedTech.has('ethics_compliance_review');
+     return cleanliness<70||stress>60||recordsGap||labGap||ethicsGap;
+   },
+   choices:[
+    {label:'Emergency Repair',type:'primary',action:()=>{const fragile=cleanliness<55||stress>70;changeMoney(fragile?-5500:-2800);reputation=clamp(reputation+(fragile?-6:-3),0,100);addLog('Cryogenic Storage Failure was contained.','b');showToast('Cryogenic repair','warn');updateUI();}},
+    {label:'Public Disclosure',type:'warn',action:()=>{changeMoney(-2000);reputation=clamp(reputation-4,0,100);addLog('The Cryogenic Storage Failure was disclosed publicly.','w');showToast('Storage failure disclosed','warn');updateUI();}}
+  ]},
+  {id:'university_contract_renewal',m:'The partner university wants to renew its student-care contract.',kind:'positive',category:'opportunity',rarity:'uncommon',minStage:'medical',icon:'🎓',title:'University Contract Renewal',cooldownDays:30,
+   desc:'The partner university is reviewing its annual student-care contract.',
+   impact:'<div>Recurring student-care income; risk of contract loss if pushed too hard.</div>',
+   available:()=>typeof specialtyLineFullyOperational==='function'&&specialtyLineFullyOperational('university'),
+   choices:[
+    {label:'Renew with Service Boost',type:'primary',action:()=>{changeMoney(4200);reputation=clamp(reputation+5,0,100);if(typeof specialtyServiceStats!=='undefined'){specialtyServiceStats.studentVisits=(specialtyServiceStats.studentVisits||0)+40;specialtyServiceStats.universityContractActive=true;}addLog('University Contract Renewal closed with a service boost. Recurring student income locked in.','g');showToast('Contract renewed','good');updateUI();}},
+    {label:'Push for Higher Fees',type:'danger',action:()=>{const ok=Math.random()<0.55;if(ok){changeMoney(7500);reputation=clamp(reputation+2,0,100);if(typeof specialtyServiceStats!=='undefined')specialtyServiceStats.universityContractActive=true;addLog('University Contract Renewal closed at higher fees.','g');showToast('Contract renewed','good');}else{reputation=clamp(reputation-6,0,100);if(typeof specialtyServiceStats!=='undefined')specialtyServiceStats.universityContractActive=false;addLog('University Contract Renewal collapsed.','b');showToast('Contract lost','warn');}updateUI();}}
+  ]},
+  {id:'fertility_access_grant',m:'A reproductive-medicine grant is available for IVF / fertility access.',kind:'positive',category:'opportunity',rarity:'uncommon',minStage:'medical',icon:'🤰',title:'Fertility Access Grant',cooldownDays:24,
+   desc:'A reproductive-medicine foundation is offering a fertility-access grant tied to IVF outcomes and ethics compliance.',
+   impact:'<div>Cash + reputation if accepted; ethics-compliance research raises the payout.</div>',
+   available:()=>typeof specialtyLineFullyOperational==='function'&&(specialtyLineFullyOperational('ivf')||specialtyLineFullyOperational('sperm_bank')),
+   choices:[
+    {label:'Accept Grant',type:'primary',action:()=>{const compliant=researchedTech.has('ethics_compliance_review');changeMoney(compliant?9000:5500);reputation=clamp(reputation+(compliant?7:4),0,100);const success=Math.random()<(compliant?0.7:0.5);if(success){if(typeof specialtyServiceStats!=='undefined')specialtyServiceStats.ivfCycles=(specialtyServiceStats.ivfCycles||0)+1;reputation=clamp(reputation+5,0,100);addLog('Fertility Access Grant accepted. A grant-funded cycle was successful.','g');}else{reputation=clamp(reputation-4,0,100);addLog('Fertility Access Grant accepted. A grant-funded cycle did not succeed.','b');}showToast('Fertility grant accepted','good');updateUI();}},
+    {label:'Decline Grant',type:'warn',action:()=>{addLog('Fertility Access Grant was declined.','w');showToast('Grant declined','info');updateUI();}}
+  ]},
+  {id:'ethics_board_review',m:'The specialty service line ethics board has scheduled a compliance review.',kind:'negative',category:'pressure',rarity:'uncommon',minStage:'medical',icon:'⚖️',title:'Ethics Board Review',cooldownDays:20,
+   desc:'Regulators are reviewing reproductive medicine and cosmetic programs.',
+   impact:'<div>Reputation and cash risk; softened by Ethics and Compliance Review research.</div>',
+   available:()=>typeof specialtyLineFullyOperational==='function'&&(specialtyLineFullyOperational('cosmetic')||specialtyLineFullyOperational('sperm_bank')||specialtyLineFullyOperational('ivf')),
+   choices:[
+    {label:'Cooperate Fully',type:'primary',action:()=>{const protected_=researchedTech.has('ethics_compliance_review');reputation=clamp(reputation+(protected_?6:2),0,100);if(typeof specialtyServiceStats!=='undefined')specialtyServiceStats.ethicsReviews=(specialtyServiceStats.ethicsReviews||0)+1;addLog(protected_?'The Ethics Board Review cleared cleanly thanks to the standing review board.':'The Ethics Board Review cleared, though documentation gaps were noted.','g');showToast('Ethics review cleared','good');updateUI();}},
+    {label:'Push Back',type:'danger',action:()=>{const protected_=researchedTech.has('ethics_compliance_review');changeMoney(protected_?-1500:-4500);reputation=clamp(reputation+(protected_?-3:-9),0,100);if(typeof specialtyServiceStats!=='undefined')specialtyServiceStats.ethicsReviews=(specialtyServiceStats.ethicsReviews||0)+1;addLog('The hospital pushed back against Ethics Board Review findings. Penalties followed.','b');showToast('Ethics review penalty','warn');updateUI();}}
+  ]},
+  {id:'blackout',m:'A blackout has rolled across the hospital grid.',kind:'negative',category:'crisis',rarity:'uncommon',minStage:'expanding',icon:'🔌',title:'Blackout',cooldownDays:14,
+   desc:'A regional power failure has hit the hospital. Backup systems and digital failovers determine whether critical care stays online.',
+   impact:'<div>Surgery, ICU, Lab, and digital systems can stall during the outage; stress and reputation slip if backups are weak.</div>',
+   protectedBy:['HVAC / Power Generator','Digital Backup System research','IT Department + IT Specialist','Operations dept upgrades'],
+   f:()=>{triggerBlackout();}},
+  {id:'car_pileup',m:'A multi-vehicle pileup just happened nearby.',kind:'negative',category:'crisis',rarity:'uncommon',minStage:'expanding',icon:'🚑',title:'Car Pileup',cooldownDays:14,
+   desc:'Dispatch is routing multiple casualties from a highway pileup. Your ER, ambulance, and surgical capacity decide whether the surge is absorbed cleanly.',
+   impact:'<div>A wave of emergency patients arrives; weak response means waiting-room overflow, stress spike, and reputation loss.</div>',
+   protectedBy:['ER','Ambulance Bay','Dispatch Office','Surgery','inpatient capacity (Ward / ICU)','Blood Bank if present'],
+   f:()=>{triggerCarPileup();}},
+  {id:'public_care_review',m:'Asherville officials have opened a Public Care Review.',kind:'negative',category:'pressure',rarity:'uncommon',minStage:'medical',icon:'🏛️',title:'Public Care Review',cooldownDays:18,
+   desc:'Government regulators are auditing your public-care commitment. Hitting the public-patient quota and having the right leadership in place flips this from fine into funding.',
+   impact:'<div>Pass: cash grant and reputation gain. Fail: cash penalty and reputation loss scaled by government penalty multipliers.</div>',
+   protectedBy:['meeting the public-care quota','Admin dept upgrades','Government Liaison board seat','Public Mission CEO','Government Compliance / Compliance Tracking / Audit Shield research'],
+   f:()=>{triggerPublicCareReview();}},
+  {id:'nurse_burnout_wave',m:'A nurse burnout wave is sweeping the active shift.',kind:'negative',category:'pressure',rarity:'uncommon',minStage:'expanding',icon:'😩',title:'Nurse Burnout Wave',cooldownDays:14,
+   desc:'Several nurses have hit the wall on the same shift. Break spaces, HR support, and senior nurse coverage decide whether morale recovers or someone walks.',
+   impact:'<div>Nurse morale and energy drop; one nurse-staffed room can briefly stall and the most-tired nurse risks quitting if you are unprepared.</div>',
+   protectedBy:['Staff Room','Lunch Room','HR Manager','Charge Nurse','Operations dept upgrades','Fatigue Management / Burnout Prevention / HR Workflow research'],
+   f:()=>{triggerNurseBurnoutWave();}},
+  {id:'medication_shortage',m:'A medication shortage is hitting your pharmacy.',kind:'negative',category:'crisis',rarity:'uncommon',minStage:'expanding',icon:'💊',title:'Medication Shortage',cooldownDays:14,
+   desc:'A regional drug-supply gap is hitting the pharmacy. Pharmacy capacity, contracts, and Manufacturing / supply research soften the cost and the slowdown.',
+   impact:'<div>Pharmacy can stall briefly and emergency-supply costs spike; revenue and patient flow take a small hit if you are unprepared.</div>',
+   protectedBy:['multiple Pharmacies','Pharmacist on shift','active insurance / supply contract','Manufacturing identity (supply cost / shortage multipliers)','Central Supply Standards / In-House Supply Production / Preventive Maintenance research'],
+   available:()=>{const m=(typeof getTechBonus==='function'?(getTechBonus().supplyShortageChanceMult??1):1);return Math.random()<m;},
+   f:()=>{triggerMedicationShortage();}},
 ];
+function applyEventProtectedBy(event){
+  if(!event||!event.protectedBy||!event.protectedBy.length)return;
+  if(event._baseImpactRich)return;
+  const base=event.impact||'';
+  const list='<div class="event-reduced-by"><b>Reduced by:</b> '+event.protectedBy.join(', ')+'.</div>';
+  event._baseImpactRich=base+list;
+  event.impact=event._baseImpactRich;
+}
+function setEventOutcome(id,outcomeHtml){
+  if(typeof EVENTS==='undefined')return;
+  const event=EVENTS.find(e=>e.id===id);
+  if(!event)return;
+  applyEventProtectedBy(event);
+  const base=event._baseImpactRich||event.impact||'';
+  const outcome=outcomeHtml?'<div class="event-outcome"><b>Outcome:</b> '+outcomeHtml+'</div>':'';
+  event.impact=base+outcome;
+}
 const EVENT_RARITY_ORDER=['legendary','rare','uncommon','common'];
 const EVENT_RARITY_CHANCES={common:0.6,uncommon:0.25,rare:0.12,legendary:0.03};
 const EVENT_DEFAULT_COOLDOWNS={common:2,uncommon:4,rare:8,legendary:15};
@@ -449,6 +566,7 @@ function initializeEventMetadata(){
     event.rarity=(event.rarity||'common').toLowerCase();
     event.cooldownDays=getEventCooldownDays(event);
     event.lastTriggeredDay=eventMemory[id]?.lastTriggeredDay??null;
+    applyEventProtectedBy(event);
   });
 }
 function isEventStageUnlocked(event){

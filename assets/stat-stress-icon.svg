@@ -1,0 +1,23 @@
+<svg width="128" height="128" viewBox="0 0 128 128" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="card" x1="18" y1="14" x2="110" y2="114" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFFDF2"/>
+      <stop offset="1" stop-color="#FFE7A8"/>
+    </linearGradient>
+    <linearGradient id="warn" x1="48" y1="30" x2="82" y2="84" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFE887"/>
+      <stop offset="1" stop-color="#F0BF44"/>
+    </linearGradient>
+    <filter id="shadow" x="8" y="8" width="112" height="112" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feDropShadow dx="0" dy="8" stdDeviation="8" flood-color="#A88834" flood-opacity="0.18"/>
+    </filter>
+  </defs>
+  <g filter="url(#shadow)">
+    <rect x="16" y="16" width="96" height="96" rx="28" fill="url(#card)"/>
+    <rect x="16.75" y="16.75" width="94.5" height="94.5" rx="27.25" stroke="#E8D394" stroke-width="1.5"/>
+    <path d="M64 31L92 83H36L64 31Z" fill="url(#warn)"/>
+    <path d="M64 31L92 83H36L64 31Z" stroke="#2C536F" stroke-width="3.2" stroke-linejoin="round"/>
+    <path d="M64 46V63" stroke="#2C536F" stroke-width="4" stroke-linecap="round"/>
+    <circle cx="64" cy="72" r="3.8" fill="#2C536F"/>
+  </g>
+</svg>

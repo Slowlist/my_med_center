@@ -1,0 +1,24 @@
+<svg width="128" height="128" viewBox="0 0 128 128" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="card" x1="18" y1="14" x2="110" y2="114" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#F4FFFC"/>
+      <stop offset="1" stop-color="#D5F4EA"/>
+    </linearGradient>
+    <linearGradient id="wipe" x1="38" y1="46" x2="86" y2="92" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#B7F2E7"/>
+      <stop offset="1" stop-color="#78D2C1"/>
+    </linearGradient>
+    <filter id="shadow" x="8" y="8" width="112" height="112" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feDropShadow dx="0" dy="8" stdDeviation="8" flood-color="#5B978B" flood-opacity="0.18"/>
+    </filter>
+  </defs>
+  <g filter="url(#shadow)">
+    <rect x="16" y="16" width="96" height="96" rx="28" fill="url(#card)"/>
+    <rect x="16.75" y="16.75" width="94.5" height="94.5" rx="27.25" stroke="#B8E6DB" stroke-width="1.5"/>
+    <path d="M44 76L73 47L89 63L60 92C54.5 97.5 45.5 97.5 40 92C34.5 86.5 34.5 81.5 44 76Z" fill="url(#wipe)"/>
+    <path d="M44 76L73 47L89 63L60 92C54.5 97.5 45.5 97.5 40 92C34.5 86.5 34.5 81.5 44 76Z" stroke="#2C536F" stroke-width="3" stroke-linejoin="round"/>
+    <path d="M76 44L84 36" stroke="#2C536F" stroke-width="3" stroke-linecap="round"/>
+    <path d="M39 40L42.3 46.4L49.3 47.5L44.2 52.4L45.4 59.3L39 56L32.6 59.3L33.8 52.4L28.7 47.5L35.7 46.4L39 40Z" fill="#FFFFFF"/>
+    <path d="M39 40L42.3 46.4L49.3 47.5L44.2 52.4L45.4 59.3L39 56L32.6 59.3L33.8 52.4L28.7 47.5L35.7 46.4L39 40Z" stroke="#2C536F" stroke-width="2.4" stroke-linejoin="round"/>
+  </g>
+</svg>
